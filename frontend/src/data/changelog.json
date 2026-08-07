@@ -1,0 +1,102 @@
+[
+  {
+  "version": "v0.13.1",
+  "fecha": "2026-06-07",
+  "titulo": "Modo oscuro + Estadisticas por periodo",
+  "cambios": [
+    { "codigo": "BL-16", "tipo": "feature", "descripcion": "Modo oscuro — toggle en el dashboard, persiste entre sesiones" },
+    { "codigo": "BL-19", "tipo": "feature", "descripcion": "Estadisticas por periodo — Mensual, Trimestral y Anual" }
+  ]
+},
+  {
+  "version": "v0.12.1",
+  "fecha": "2026-06-07",
+  "titulo": "Login con Google",
+  "cambios": [
+    { "codigo": "BL-23", "tipo": "feature", "descripcion": "Autenticacion con Google — un click para entrar sin formulario" }
+  ]
+},
+  {
+  "version": "v0.11.1",
+  "fecha": "2026-06-07",
+  "titulo": "Iconos personalizados de navegacion",
+  "cambios": [
+    { "codigo": "BL-33", "tipo": "mejora", "descripcion": "Iconos personalizados en barra de navegacion inferior con tema RunCoach" },
+    { "codigo": "BL-33", "tipo": "mejora", "descripcion": "Iconos personalizados en botonera de accesos rapidos del dashboard" }
+  ]
+},
+  {
+    "version": "v0.10.0",
+    "fecha": "2026-06-06",
+    "titulo": "Dashboard rediseñado + Calculadora de ritmo",
+    "cambios": [
+      { "codigo": "BL-28", "tipo": "feature", "descripcion": "Status bar con avatar circular, campanita y boton de salir" },
+      { "codigo": "BL-29", "tipo": "feature", "descripcion": "Campanita de notificaciones con dropdown de alertas" },
+      { "codigo": "BL-30", "tipo": "feature", "descripcion": "Alertas de sobreentrenamiento integradas en campanita" },
+      { "codigo": "BL-31", "tipo": "feature", "descripcion": "Avatar circular con inicial del nombre en status bar" },
+      { "codigo": "BL-32", "tipo": "feature", "descripcion": "Calculadora de ritmo — modal con modo ritmo y modo tiempo" },
+      { "codigo": "BL-33", "tipo": "feature", "descripcion": "Botonera de accesos rapidos con iconos personalizados" }
+    ]
+  },
+  {
+    "version": "v0.9.1",
+    "fecha": "2026-06-06",
+    "titulo": "Historial de recomendaciones IA",
+    "cambios": [
+      { "codigo": "BL-18", "tipo": "feature", "descripcion": "Historial de las ultimas 5 recomendaciones con modal de detalle" },
+      { "codigo": "BL-04", "tipo": "feature", "descripcion": "Perfil editable — nombre, peso, edad y nivel" },
+      { "codigo": "BF-01", "tipo": "fix", "descripcion": "Historial visible en barra de navegacion inferior" }
+    ]
+  },  
+  {
+  "version": "v0.8.0",
+  "fecha": "2026-06-05",
+  "titulo": "Perfil de usuario editable",
+  "cambios": [
+    { "codigo": "BL-04", "tipo": "feature", "descripcion": "Editar perfil — nombre, peso, edad y nivel desde la app" },
+    { "codigo": "BF-01", "tipo": "fix", "descripcion": "Historial visible en barra de navegacion inferior" }
+  ]
+  },
+  {
+    "version": "v0.6.2",
+    "fecha": "2026-06-04",
+    "titulo": "Objetivos inteligentes + Estadisticas",
+    "cambios": [
+      { "codigo": "BL-05", "tipo": "feature", "descripcion": "Objetivos semanales de km con progreso lunes a domingo" },
+      { "codigo": "BL-06", "tipo": "feature", "descripcion": "Objetivos a largo plazo con distancia, tiempo y fecha limite" },
+      { "codigo": "BL-03", "tipo": "feature", "descripcion": "No se permiten registrar sesiones con fecha futura" },
+      { "codigo": "BL-24", "tipo": "feature", "descripcion": "Modulo de estadisticas con graficos interactivos de km, sesiones y ritmo" },
+      { "codigo": "BL-02", "tipo": "feature", "descripcion": "Versionado automatico en cada build visible en la app" }
+    ]
+  },
+  {
+    "version": "v0.5.0",
+    "fecha": "2026-06-01",
+    "titulo": "Persistencia + DevOps + IA",
+    "cambios": [
+      { "codigo": "BL-09", "tipo": "feature", "descripcion": "Agente RunCoach IA con Gemini 2.5 Flash via Vertex AI" },
+      { "codigo": "BL-07", "tipo": "feature", "descripcion": "4 microservicios desplegados en Google Cloud Run" },
+      { "codigo": "BL-08", "tipo": "feature", "descripcion": "Persistencia con Cloud Firestore" }
+    ]
+  },
+  {
+    "version": "v0.4.0",
+    "fecha": "2026-05-25",
+    "titulo": "Arquitectura Cloud-Native",
+    "cambios": [
+      { "codigo": "BL-06", "tipo": "feature", "descripcion": "Arquitectura de microservicios con FastAPI" },
+      { "codigo": "BL-07", "tipo": "feature", "descripcion": "Auth Service desplegado en Cloud Run con Firebase Auth" }
+    ]
+  },
+  {
+    "version": "v0.1.0",
+    "fecha": "2026-05-18",
+    "titulo": "Lanzamiento Beta",
+    "cambios": [
+      { "codigo": "BL-01", "tipo": "feature", "descripcion": "Login y registro de usuarios con Firebase Auth" },
+      { "codigo": "BL-02", "tipo": "feature", "descripcion": "Dashboard con metricas semanales" },
+      { "codigo": "BL-03", "tipo": "feature", "descripcion": "Registro de sesiones de entrenamiento" },
+      { "codigo": "BL-04", "tipo": "feature", "descripcion": "Historial de sesiones con editar y eliminar" }
+    ]
+  }
+]
