@@ -83,6 +83,6 @@ npm run dev
 
 | Sprint | Tema | Estado |
 |--------|------|--------|
-| Sprint 1 | RAG / Knowledge Engineering | En progreso |
-| Sprint 2 | Agentes Inteligentes | Pendiente |
+| Sprint 1 | RAG / Knowledge Engineering | Entregado |
+| Sprint 2 | Agentes Inteligentes | En progreso |
 | Sprint 3 | Sistemas Multi-Agente | Pendiente |
