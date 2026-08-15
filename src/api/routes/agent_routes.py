@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from src.agents.wellness.agent import WellnessAgent
 from src.database.firestore_client import db
@@ -8,11 +8,27 @@ wellness_agent = WellnessAgent()
 
 
 @router.post("/{userId}/analyze")
-async def analyze(userId: str):
+async def analyze(
+    userId: str,
+    mode: str = Query("rag", description="Modo de análisis: 'rag' o 'legacy'"),
+):
+    """Genera una recomendación. El parámetro 'mode' selecciona la arquitectura."""
     try:
-        return wellness_agent.analyze(userId)
+        return wellness_agent.analyze(userId, mode=mode)
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=f"Gemini no retornó JSON válido: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{userId}/compare")
+async def compare(userId: str):
+    """Ejecuta ambos modos sobre el mismo estado y devuelve la comparativa.
+
+    Endpoint de demostración: no persiste resultados.
+    """
+    try:
+        return wellness_agent.comparar(userId)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,13 +89,11 @@ async def get_alerts(userId: str):
         data = results[0]
         return {
             "userId": userId,
-            "alerts": [
-                {
-                    "tipo": "sobreentrenamiento",
-                    "mensaje": data["alerta"],
-                    "fecha": data.get("generadoEn", ""),
-                }
-            ],
+            "alerts": [{
+                "tipo": "sobreentrenamiento",
+                "mensaje": data["alerta"],
+                "fecha": data.get("generadoEn", ""),
+            }],
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
