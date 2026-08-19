@@ -1,11 +1,19 @@
+"""Cliente Firestore de la plataforma."""
+
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+# El proyecto se declara explícitamente. Sin esto, firebase-admin toma el
+# proyecto por defecto de las credenciales ADC, que puede no ser el correcto.
+GCP_PROJECT = "runcoach-ai-496921"
+
 
 def init_firebase() -> firestore.Client:
     """Initialize Firebase app and return Firestore client."""
     if not firebase_admin._apps:
         cred = credentials.ApplicationDefault()
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred, {"projectId": GCP_PROJECT})
     return firestore.client()
+
 
 db: firestore.Client = init_firebase()

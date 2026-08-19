@@ -1,0 +1,297 @@
+# =============================================================================
+# Taxonomía del Dominio Wellness / Entrenamiento de Resistencia
+# Plataforma Inteligente Wellness 2.0 — Sprint 1
+# =============================================================================
+# Clasificación jerárquica de los conceptos del dominio. Los valores definidos
+# aquí se usan como vocabulario controlado para la metadata de los chunks,
+# habilitando filtrado semántico en el retriever.
+# =============================================================================
+
+metadata:
+  nombre: Wellness Training Taxonomy
+  version: "1.0.0"
+  vinculada_a: wellness_ontology.yaml
+  idioma: es
+
+# -----------------------------------------------------------------------------
+# TIPOS DE SESIÓN
+# -----------------------------------------------------------------------------
+tipos_sesion:
+
+  descanso:
+    etiqueta: Descanso
+    descripcion: Ausencia programada de carga. Permite la supercompensación.
+    zona_asociada: null
+    proposito: recuperacion
+
+  recuperacion:
+    etiqueta: Recuperación activa
+    descripcion: >
+      Carrera muy suave de corta duración. Favorece el flujo sanguíneo sin
+      añadir estrés significativo.
+    zona_asociada: Z1
+    proposito: recuperacion
+    duracion_tipica_min: [20, 40]
+
+  rodaje:
+    etiqueta: Rodaje aeróbico
+    descripcion: >
+      Carrera continua a intensidad conversacional. Constituye el grueso del
+      volumen en un modelo de distribución polarizada.
+    zona_asociada: Z2
+    proposito: base_aerobica
+    duracion_tipica_min: [40, 90]
+    subtipos:
+      - rodaje_suave
+      - rodaje_medio
+
+  tirada_larga:
+    etiqueta: Tirada larga
+    descripcion: >
+      Sesión de volumen elevado a intensidad baja. Desarrolla resistencia
+      estructural y eficiencia metabólica.
+    zona_asociada: Z2
+    proposito: resistencia
+    duracion_tipica_min: [90, 180]
+    nota_riesgo: >
+      Principal candidata a generar pico de carga en sesión individual;
+      su progresión debe vigilarse de forma específica.
+
+  tempo:
+    etiqueta: Tempo / Umbral
+    descripcion: >
+      Esfuerzo sostenido en torno al segundo umbral de lactato. Mejora la
+      capacidad de sostener velocidades altas.
+    zona_asociada: Z4
+    proposito: umbral
+    duracion_tipica_min: [20, 60]
+
+  intervalos:
+    etiqueta: Intervalos
+    descripcion: >
+      Repeticiones a intensidad elevada con recuperación intercalada.
+      Estimula el consumo máximo de oxígeno.
+    zona_asociada: Z5
+    proposito: vo2max
+    duracion_tipica_min: [30, 60]
+
+  fartlek:
+    etiqueta: Fartlek
+    descripcion: >
+      Juego de velocidades con cambios de ritmo no estructurados. Transición
+      entre trabajo aeróbico y trabajo de calidad.
+    zona_asociada: Z3
+    proposito: mixto
+    duracion_tipica_min: [30, 60]
+
+# -----------------------------------------------------------------------------
+# ZONAS DE INTENSIDAD
+# -----------------------------------------------------------------------------
+# Delimitadas por los umbrales de lactato LT1 y LT2. Los porcentajes de FC son
+# referenciales; la variabilidad interindividual es sustancial y la asignación
+# precisa requiere prueba de laboratorio o de campo.
+# -----------------------------------------------------------------------------
+zonas_intensidad:
+
+  Z1:
+    etiqueta: Recuperación
+    umbral_referencia: sub_LT1
+    pct_fc_maxima: [50, 60]
+    adaptacion_principal: recuperación y flujo sanguíneo periférico
+    percepcion_esfuerzo_rpe: [1, 2]
+
+  Z2:
+    etiqueta: Base aeróbica
+    umbral_referencia: sub_LT1
+    pct_fc_maxima: [60, 75]
+    adaptacion_principal: >
+      densidad mitocondrial, capilarización, oxidación de grasas y captación
+      de lactato por fibras lentas
+    percepcion_esfuerzo_rpe: [3, 4]
+    nota: >
+      Zona sobre la que se construye el 80% del volumen en el modelo polarizado
+
+  Z3:
+    etiqueta: Aeróbico medio
+    umbral_referencia: entre_LT1_LT2
+    pct_fc_maxima: [75, 82]
+    adaptacion_principal: resistencia aeróbica intermedia
+    percepcion_esfuerzo_rpe: [5, 6]
+    nota: >
+      Zona históricamente sobreutilizada por corredores recreativos; genera
+      fatiga apreciable con estímulo adaptativo subóptimo
+
+  Z4:
+    etiqueta: Umbral
+    umbral_referencia: entre_LT1_LT2
+    pct_fc_maxima: [82, 89]
+    adaptacion_principal: tolerancia y aclaramiento de lactato
+    percepcion_esfuerzo_rpe: [7, 8]
+
+  Z5:
+    etiqueta: VO2 máximo
+    umbral_referencia: sobre_LT2
+    pct_fc_maxima: [89, 100]
+    adaptacion_principal: consumo máximo de oxígeno y economía neuromuscular
+    percepcion_esfuerzo_rpe: [9, 10]
+
+# -----------------------------------------------------------------------------
+# NIVELES DE CORREDOR
+# -----------------------------------------------------------------------------
+# El nivel modula los umbrales de carga tolerables. No existe un umbral único
+# aplicable a toda la población (ver axioma AX-05 de la ontología).
+# -----------------------------------------------------------------------------
+niveles_corredor:
+
+  principiante:
+    etiqueta: Principiante
+    volumen_semanal_km: [0, 20]
+    experiencia_meses: [0, 6]
+    incremento_semanal_referencia_pct: 10
+    nota_riesgo: >
+      Ausencia de experiencia previa es factor de riesgo de lesión con
+      evidencia de calidad moderada
+
+  intermedio:
+    etiqueta: Intermedio
+    volumen_semanal_km: [20, 45]
+    experiencia_meses: [6, 24]
+    incremento_semanal_referencia_pct: 15
+
+  avanzado:
+    etiqueta: Avanzado
+    volumen_semanal_km: [45, 80]
+    experiencia_meses: [24, 60]
+    incremento_semanal_referencia_pct: 20
+
+  competitivo:
+    etiqueta: Competitivo
+    volumen_semanal_km: [80, 200]
+    experiencia_meses: [60, null]
+    incremento_semanal_referencia_pct: 25
+    nota: >
+      Corredores bien entrenados toleran incrementos sustancialmente mayores
+      que el valor clásico del 10%
+
+# -----------------------------------------------------------------------------
+# FASES DE ENTRENAMIENTO
+# -----------------------------------------------------------------------------
+fases_entrenamiento:
+
+  base:
+    etiqueta: Base
+    semanas_antes_meta: [12, null]
+    enfoque_volumen: progresión gradual ascendente
+    enfoque_intensidad: predominio Z2, calidad mínima
+
+  construccion:
+    etiqueta: Construcción específica
+    semanas_antes_meta: [4, 12]
+    enfoque_volumen: volumen alto sostenido
+    enfoque_intensidad: introducción de trabajo en Z4 y Z5
+
+  tapering:
+    etiqueta: Tapering
+    semanas_antes_meta: [0, 3]
+    enfoque_volumen: reducción del 41% al 60%
+    enfoque_intensidad: se mantiene intensidad y frecuencia
+    soporte_evidencia: alto
+
+  transicion:
+    etiqueta: Transición
+    semanas_despues_meta: [0, 3]
+    enfoque_volumen: volumen mínimo
+    enfoque_intensidad: solo Z1 y Z2
+
+# -----------------------------------------------------------------------------
+# DISTANCIAS OBJETIVO
+# -----------------------------------------------------------------------------
+distancias_objetivo:
+  5k:      { etiqueta: "5 kilómetros",  km: 5 }
+  10k:     { etiqueta: "10 kilómetros", km: 10 }
+  21k:     { etiqueta: "Media maratón", km: 21.097 }
+  42k:     { etiqueta: "Maratón",       km: 42.195 }
+  ultra:   { etiqueta: "Ultra fondo",   km: null }
+
+# -----------------------------------------------------------------------------
+# LESIONES POR SOBREUSO
+# -----------------------------------------------------------------------------
+lesiones_sobreuso:
+
+  sindrome_dolor_patelofemoral:
+    etiqueta: Síndrome de dolor patelofemoral
+    alias: rodilla del corredor
+    estructura: articulación patelofemoral
+
+  periostitis_tibial:
+    etiqueta: Periostitis tibial
+    alias: shin splints
+    estructura: periostio tibial medial
+
+  fascitis_plantar:
+    etiqueta: Fascitis plantar
+    estructura: fascia plantar
+
+  tendinopatia_aquilea:
+    etiqueta: Tendinopatía aquílea
+    estructura: tendón de Aquiles
+
+  sindrome_banda_iliotibial:
+    etiqueta: Síndrome de la banda iliotibial
+    estructura: banda iliotibial
+
+  fractura_estres:
+    etiqueta: Fractura por estrés
+    estructura: hueso (tibia, metatarsianos, fémur)
+    gravedad: alta
+
+# -----------------------------------------------------------------------------
+# CATEGORÍAS DE CONOCIMIENTO
+# -----------------------------------------------------------------------------
+# Vocabulario controlado para clasificar los documentos de la knowledge base.
+# Se propaga como metadata de cada chunk y habilita filtrado en el retriever.
+# -----------------------------------------------------------------------------
+categorias_conocimiento:
+  carga_entrenamiento:
+    etiqueta: Carga de entrenamiento y progresión
+  zonas_fisiologicas:
+    etiqueta: Zonas de intensidad y umbrales fisiológicos
+  distribucion_intensidad:
+    etiqueta: Distribución de intensidad y periodización
+  prevencion_lesiones:
+    etiqueta: Prevención de lesiones por sobreuso
+  tapering:
+    etiqueta: Tapering y puesta a punto
+  nutricion:
+    etiqueta: Nutrición para el corredor
+  recuperacion:
+    etiqueta: Recuperación y sueño
+
+# -----------------------------------------------------------------------------
+# NIVELES DE EVIDENCIA
+# -----------------------------------------------------------------------------
+# Clasificación de la solidez del respaldo científico de cada afirmación.
+# Se anota en el front-matter de los documentos y viaja como metadata del chunk,
+# permitiendo al agente calificar la confianza de sus recomendaciones.
+# -----------------------------------------------------------------------------
+niveles_evidencia:
+  alto:
+    etiqueta: Evidencia alta
+    descripcion: >
+      Respaldado por metaanálisis o revisiones sistemáticas con hallazgos
+      consistentes
+  moderado:
+    etiqueta: Evidencia moderada
+    descripcion: >
+      Respaldado por estudios primarios de calidad razonable, con
+      heterogeneidad o limitaciones metodológicas
+  limitado:
+    etiqueta: Evidencia limitada
+    descripcion: >
+      Hallazgos preliminares, conflictivos o de muestra reducida
+  practica_consolidada:
+    etiqueta: Práctica consolidada sin respaldo fuerte
+    descripcion: >
+      Ampliamente adoptado en la práctica pero con soporte científico débil
+      o refutado parcialmente. Categoría relevante para el caso de la
+      regla del 10%.

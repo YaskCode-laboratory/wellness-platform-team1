@@ -1,0 +1,389 @@
+{
+  "fecha": "2026-08-15T14:54:02.178879",
+  "k": 5,
+  "global": {
+    "n_casos": 18,
+    "precision_at_k": 0.7667,
+    "recall_at_k": 0.9444,
+    "mrr": 0.9444,
+    "hit_rate": 0.9444
+  },
+  "por_categoria": {
+    "carga_entrenamiento": {
+      "n_casos": 4,
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    },
+    "distribucion_intensidad": {
+      "n_casos": 2,
+      "precision_at_k": 0.9,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    },
+    "nutricion": {
+      "n_casos": 2,
+      "precision_at_k": 0.4,
+      "recall_at_k": 0.5,
+      "mrr": 0.5,
+      "hit_rate": 0.5
+    },
+    "prevencion_lesiones": {
+      "n_casos": 3,
+      "precision_at_k": 0.8667,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    },
+    "recuperacion": {
+      "n_casos": 2,
+      "precision_at_k": 0.6,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    },
+    "tapering": {
+      "n_casos": 2,
+      "precision_at_k": 0.7,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    },
+    "zonas_fisiologicas": {
+      "n_casos": 3,
+      "precision_at_k": 0.9333,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "hit_rate": 1.0
+    }
+  },
+  "casos": [
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-01",
+      "consulta": "¿Es cierto que no debo aumentar más de 10% mi kilometraje semanal?",
+      "docs_esperados": [
+        "KB-001"
+      ],
+      "docs_recuperados": [
+        "KB-001",
+        "KB-001",
+        "KB-001",
+        "KB-001",
+        "KB-001"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-02",
+      "consulta": "Qué es el ratio de carga aguda crónica y cómo se calcula",
+      "docs_esperados": [
+        "KB-001"
+      ],
+      "docs_recuperados": [
+        "KB-001",
+        "KB-001",
+        "KB-001",
+        "KB-001",
+        "KB-001"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-03",
+      "consulta": "Cuánto volumen puedo subir por semana si ya soy un corredor experimentado",
+      "docs_esperados": [
+        "KB-001"
+      ],
+      "docs_recuperados": [
+        "KB-001",
+        "KB-001",
+        "KB-005",
+        "KB-001",
+        "KB-001"
+      ]
+    },
+    {
+      "precision_at_k": 0.4,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-04",
+      "consulta": "Diferencia entre carga interna y carga externa de entrenamiento",
+      "docs_esperados": [
+        "KB-001"
+      ],
+      "docs_recuperados": [
+        "KB-001",
+        "KB-004",
+        "KB-003",
+        "KB-003",
+        "KB-001"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-05",
+      "consulta": "Qué es la zona 2 y qué beneficios tiene entrenarla",
+      "docs_esperados": [
+        "KB-002"
+      ],
+      "docs_recuperados": [
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-003"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-06",
+      "consulta": "Cuál es la diferencia entre el primer y el segundo umbral de lactato",
+      "docs_esperados": [
+        "KB-002"
+      ],
+      "docs_recuperados": [
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-002"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-07",
+      "consulta": "Cómo calculo mis zonas de frecuencia cardíaca para correr",
+      "docs_esperados": [
+        "KB-002"
+      ],
+      "docs_recuperados": [
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-002",
+        "KB-002"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-08",
+      "consulta": "En qué consiste el entrenamiento polarizado ochenta veinte",
+      "docs_esperados": [
+        "KB-003"
+      ],
+      "docs_recuperados": [
+        "KB-003",
+        "KB-003",
+        "KB-003",
+        "KB-003",
+        "KB-003"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-09",
+      "consulta": "Por qué es contraproducente correr siempre a ritmo medio cómodo",
+      "docs_esperados": [
+        "KB-003",
+        "KB-002"
+      ],
+      "docs_recuperados": [
+        "KB-002",
+        "KB-003",
+        "KB-002",
+        "KB-007",
+        "KB-003"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-10",
+      "consulta": "Me duele la rodilla cada vez que salgo a correr, qué debo hacer",
+      "docs_esperados": [
+        "KB-004"
+      ],
+      "docs_recuperados": [
+        "KB-004",
+        "KB-004",
+        "KB-004",
+        "KB-004",
+        "KB-004"
+      ]
+    },
+    {
+      "precision_at_k": 1.0,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-11",
+      "consulta": "Cuáles son los principales factores de riesgo de lesión en corredores",
+      "docs_esperados": [
+        "KB-004"
+      ],
+      "docs_recuperados": [
+        "KB-004",
+        "KB-004",
+        "KB-004",
+        "KB-004",
+        "KB-004"
+      ]
+    },
+    {
+      "precision_at_k": 0.6,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-12",
+      "consulta": "Cómo evito el dolor en la espinilla al aumentar entrenamientos",
+      "docs_esperados": [
+        "KB-004"
+      ],
+      "docs_recuperados": [
+        "KB-004",
+        "KB-005",
+        "KB-004",
+        "KB-005",
+        "KB-004"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-13",
+      "consulta": "Cuánto debo reducir los kilómetros las semanas previas a una maratón",
+      "docs_esperados": [
+        "KB-005"
+      ],
+      "docs_recuperados": [
+        "KB-005",
+        "KB-005",
+        "KB-005",
+        "KB-006",
+        "KB-005"
+      ]
+    },
+    {
+      "precision_at_k": 0.6,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-14",
+      "consulta": "Durante la puesta a punto debo correr también más despacio",
+      "docs_esperados": [
+        "KB-005"
+      ],
+      "docs_recuperados": [
+        "KB-005",
+        "KB-005",
+        "KB-003",
+        "KB-005",
+        "KB-002"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-15",
+      "consulta": "Cuántos gramos de carbohidratos tomar por hora en carreras largas",
+      "docs_esperados": [
+        "KB-006"
+      ],
+      "docs_recuperados": [
+        "KB-006",
+        "KB-006",
+        "KB-006",
+        "KB-006",
+        "KB-005"
+      ]
+    },
+    {
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "reciprocal_rank": 0.0,
+      "hit": 0.0,
+      "id": "EV-16",
+      "consulta": "Qué pasa si como muy poco para la cantidad que entreno",
+      "docs_esperados": [
+        "KB-006"
+      ],
+      "docs_recuperados": [
+        "KB-003",
+        "KB-003",
+        "KB-005",
+        "KB-001",
+        "KB-001"
+      ]
+    },
+    {
+      "precision_at_k": 0.4,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-17",
+      "consulta": "Cuántas horas necesito dormir si entreno con volumen alto",
+      "docs_esperados": [
+        "KB-007"
+      ],
+      "docs_recuperados": [
+        "KB-007",
+        "KB-007",
+        "KB-003",
+        "KB-003",
+        "KB-002"
+      ]
+    },
+    {
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "reciprocal_rank": 1.0,
+      "hit": 1.0,
+      "id": "EV-18",
+      "consulta": "Sirven los baños de agua fría para recuperarse después de correr",
+      "docs_esperados": [
+        "KB-007"
+      ],
+      "docs_recuperados": [
+        "KB-007",
+        "KB-006",
+        "KB-007",
+        "KB-007",
+        "KB-007"
+      ]
+    }
+  ]
+}

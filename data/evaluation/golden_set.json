@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "descripcion": "Conjunto de referencia para evaluación de recuperación del sistema RAG wellness",
+    "criterio_relevancia": "documento",
+    "nota": "La relevancia se define a nivel de documento (doc_id). Recuperar cualquier chunk del documento esperado cuenta como acierto, dado que los documentos son temáticamente cohesivos.",
+    "fecha": "2026-08-11"
+  },
+  "casos": [
+    {
+      "id": "EV-01",
+      "consulta": "¿Es cierto que no debo aumentar más de 10% mi kilometraje semanal?",
+      "docs_esperados": ["KB-001"],
+      "categoria": "carga_entrenamiento"
+    },
+    {
+      "id": "EV-02",
+      "consulta": "Qué es el ratio de carga aguda crónica y cómo se calcula",
+      "docs_esperados": ["KB-001"],
+      "categoria": "carga_entrenamiento"
+    },
+    {
+      "id": "EV-03",
+      "consulta": "Cuánto volumen puedo subir por semana si ya soy un corredor experimentado",
+      "docs_esperados": ["KB-001"],
+      "categoria": "carga_entrenamiento"
+    },
+    {
+      "id": "EV-04",
+      "consulta": "Diferencia entre carga interna y carga externa de entrenamiento",
+      "docs_esperados": ["KB-001"],
+      "categoria": "carga_entrenamiento"
+    },
+    {
+      "id": "EV-05",
+      "consulta": "Qué es la zona 2 y qué beneficios tiene entrenarla",
+      "docs_esperados": ["KB-002"],
+      "categoria": "zonas_fisiologicas"
+    },
+    {
+      "id": "EV-06",
+      "consulta": "Cuál es la diferencia entre el primer y el segundo umbral de lactato",
+      "docs_esperados": ["KB-002"],
+      "categoria": "zonas_fisiologicas"
+    },
+    {
+      "id": "EV-07",
+      "consulta": "Cómo calculo mis zonas de frecuencia cardíaca para correr",
+      "docs_esperados": ["KB-002"],
+      "categoria": "zonas_fisiologicas"
+    },
+    {
+      "id": "EV-08",
+      "consulta": "En qué consiste el entrenamiento polarizado ochenta veinte",
+      "docs_esperados": ["KB-003"],
+      "categoria": "distribucion_intensidad"
+    },
+    {
+      "id": "EV-09",
+      "consulta": "Por qué es contraproducente correr siempre a ritmo medio cómodo",
+      "docs_esperados": ["KB-003", "KB-002"],
+      "categoria": "distribucion_intensidad"
+    },
+    {
+      "id": "EV-10",
+      "consulta": "Me duele la rodilla cada vez que salgo a correr, qué debo hacer",
+      "docs_esperados": ["KB-004"],
+      "categoria": "prevencion_lesiones"
+    },
+    {
+      "id": "EV-11",
+      "consulta": "Cuáles son los principales factores de riesgo de lesión en corredores",
+      "docs_esperados": ["KB-004"],
+      "categoria": "prevencion_lesiones"
+    },
+    {
+      "id": "EV-12",
+      "consulta": "Cómo evito el dolor en la espinilla al aumentar entrenamientos",
+      "docs_esperados": ["KB-004"],
+      "categoria": "prevencion_lesiones"
+    },
+    {
+      "id": "EV-13",
+      "consulta": "Cuánto debo reducir los kilómetros las semanas previas a una maratón",
+      "docs_esperados": ["KB-005"],
+      "categoria": "tapering"
+    },
+    {
+      "id": "EV-14",
+      "consulta": "Durante la puesta a punto debo correr también más despacio",
+      "docs_esperados": ["KB-005"],
+      "categoria": "tapering"
+    },
+    {
+      "id": "EV-15",
+      "consulta": "Cuántos gramos de carbohidratos tomar por hora en carreras largas",
+      "docs_esperados": ["KB-006"],
+      "categoria": "nutricion"
+    },
+    {
+      "id": "EV-16",
+      "consulta": "Qué pasa si como muy poco para la cantidad que entreno",
+      "docs_esperados": ["KB-006"],
+      "categoria": "nutricion"
+    },
+    {
+      "id": "EV-17",
+      "consulta": "Cuántas horas necesito dormir si entreno con volumen alto",
+      "docs_esperados": ["KB-007"],
+      "categoria": "recuperacion"
+    },
+    {
+      "id": "EV-18",
+      "consulta": "Sirven los baños de agua fría para recuperarse después de correr",
+      "docs_esperados": ["KB-007"],
+      "categoria": "recuperacion"
+    }
+  ]
+}

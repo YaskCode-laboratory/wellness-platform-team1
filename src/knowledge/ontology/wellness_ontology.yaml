@@ -1,0 +1,327 @@
+# =============================================================================
+# Ontología Ligera — Dominio Wellness / Entrenamiento de Resistencia
+# Plataforma Inteligente Wellness 2.0 — Sprint 1
+# =============================================================================
+# Modelo conceptual del dominio. Define las entidades, sus atributos y las
+# relaciones semánticas entre ellas. Se usa para:
+#   1. Guiar la curación documental de la knowledge base
+#   2. Enriquecer los chunks con metadata estructurada
+#   3. Permitir filtrado semántico en el retriever
+# =============================================================================
+
+metadata:
+  nombre: Wellness Training Ontology
+  version: "1.0.0"
+  dominio: entrenamiento de resistencia y bienestar del corredor
+  idioma: es
+  autores:
+    - José Francisco Urdaneta Sánchez
+    - Julio César Matute
+  fecha: 2026-08-10
+
+# -----------------------------------------------------------------------------
+# ENTIDADES
+# -----------------------------------------------------------------------------
+entidades:
+
+  Corredor:
+    descripcion: >
+      Persona que ejecuta un programa de entrenamiento. Es el sujeto central
+      del dominio; todas las recomendaciones se personalizan respecto a él.
+    atributos:
+      - nombre: uid
+        tipo: string
+        descripcion: Identificador único
+      - nombre: edad
+        tipo: integer
+        unidad: años
+      - nombre: peso
+        tipo: float
+        unidad: kg
+      - nombre: nivel
+        tipo: enum
+        valores_ref: taxonomia.niveles_corredor
+      - nombre: historial_lesiones
+        tipo: list[Lesion]
+        descripcion: >
+          Factor de riesgo con evidencia de alta calidad para lesión futura
+      - nombre: volumen_semanal_habitual
+        tipo: float
+        unidad: km
+
+  Sesion:
+    descripcion: >
+      Unidad atómica de entrenamiento. Un evento de carrera registrado con
+      sus parámetros de volumen e intensidad.
+    atributos:
+      - nombre: id
+        tipo: string
+      - nombre: fecha
+        tipo: date
+      - nombre: distanciaKm
+        tipo: float
+        unidad: km
+      - nombre: duracionMin
+        tipo: float
+        unidad: minutos
+      - nombre: tipo
+        tipo: enum
+        valores_ref: taxonomia.tipos_sesion
+      - nombre: zona_predominante
+        tipo: enum
+        valores_ref: taxonomia.zonas_intensidad
+      - nombre: frecuencia_cardiaca_media
+        tipo: integer
+        unidad: bpm
+      - nombre: percepcion_esfuerzo
+        tipo: integer
+        descripcion: Escala RPE de Borg 1-10
+
+  CargaEntrenamiento:
+    descripcion: >
+      Construcción derivada que cuantifica el estrés acumulado. Es la entidad
+      clave para la evaluación de riesgo de lesión.
+    atributos:
+      - nombre: carga_aguda
+        tipo: float
+        descripcion: Volumen o carga de los últimos 7 días
+      - nombre: carga_cronica
+        tipo: float
+        descripcion: Media móvil de las últimas 4 semanas (28 días)
+      - nombre: acwr
+        tipo: float
+        descripcion: >
+          Ratio carga aguda:crónica. Predictor de riesgo de lesión con mejor
+          soporte de evidencia que el incremento porcentual semanal.
+      - nombre: variacion_semanal_pct
+        tipo: float
+        descripcion: >
+          Incremento porcentual respecto a la semana previa. Métrica clásica
+          asociada a la "regla del 10%", de soporte científico limitado.
+      - nombre: pico_sesion_pct
+        tipo: float
+        descripcion: >
+          Incremento de la sesión individual más larga respecto al histórico.
+          Predictor de lesión con mejor evidencia que el volumen semanal.
+
+  ZonaIntensidad:
+    descripcion: >
+      Rango fisiológico de intensidad delimitado por los umbrales de lactato
+      LT1 y LT2. Determina la adaptación fisiológica que produce la sesión.
+    atributos:
+      - nombre: identificador
+        tipo: enum
+        valores_ref: taxonomia.zonas_intensidad
+      - nombre: limite_inferior_fc
+        tipo: float
+        descripcion: Porcentaje de FC de umbral o FC máxima
+      - nombre: limite_superior_fc
+        tipo: float
+      - nombre: umbral_referencia
+        tipo: enum
+        valores: [sub_LT1, entre_LT1_LT2, sobre_LT2]
+      - nombre: adaptacion_principal
+        tipo: string
+
+  Objetivo:
+    descripcion: >
+      Meta declarada por el corredor. Define la fase de entrenamiento vigente
+      y condiciona las recomendaciones.
+    atributos:
+      - nombre: id
+        tipo: string
+      - nombre: distancia_meta
+        tipo: enum
+        valores_ref: taxonomia.distancias_objetivo
+      - nombre: fecha_meta
+        tipo: date
+      - nombre: tiempo_objetivo
+        tipo: string
+      - nombre: activo
+        tipo: boolean
+
+  FaseEntrenamiento:
+    descripcion: >
+      Periodo del macrociclo con objetivo fisiológico propio. Se deriva de la
+      distancia entre la fecha actual y la fecha meta del objetivo.
+    atributos:
+      - nombre: nombre
+        tipo: enum
+        valores_ref: taxonomia.fases_entrenamiento
+      - nombre: semanas_restantes_meta
+        tipo: integer
+      - nombre: enfoque_volumen
+        tipo: string
+      - nombre: enfoque_intensidad
+        tipo: string
+
+  Lesion:
+    descripcion: >
+      Condición que interrumpe o limita el entrenamiento. En este dominio el
+      foco son las lesiones por sobreuso, asociadas a errores de carga.
+    atributos:
+      - nombre: tipo
+        tipo: enum
+        valores_ref: taxonomia.lesiones_sobreuso
+      - nombre: factores_riesgo
+        tipo: list[string]
+      - nombre: estructura_afectada
+        tipo: string
+
+  Recomendacion:
+    descripcion: >
+      Salida del sistema inteligente. Prescripción personalizada generada por
+      el agente a partir del estado del corredor y del conocimiento recuperado.
+    atributos:
+      - nombre: id
+        tipo: string
+      - nombre: tipo
+        tipo: enum
+        valores_ref: taxonomia.tipos_sesion
+      - nombre: mensaje
+        tipo: string
+      - nombre: alerta
+        tipo: string
+        opcional: true
+      - nombre: prioridad
+        tipo: enum
+        valores: [baja, media, alta]
+      - nombre: fuentes
+        tipo: list[FuenteConocimiento]
+        descripcion: >
+          Trazabilidad RAG — documentos de la KB que fundamentan la respuesta
+
+  FuenteConocimiento:
+    descripcion: >
+      Documento curado de la base de conocimiento. Unidad de trazabilidad que
+      permite auditar el fundamento de cada recomendación.
+    atributos:
+      - nombre: doc_id
+        tipo: string
+      - nombre: titulo
+        tipo: string
+      - nombre: categoria
+        tipo: enum
+        valores_ref: taxonomia.categorias_conocimiento
+      - nombre: nivel_evidencia
+        tipo: enum
+        valores_ref: taxonomia.niveles_evidencia
+      - nombre: referencia
+        tipo: string
+
+# -----------------------------------------------------------------------------
+# RELACIONES
+# -----------------------------------------------------------------------------
+relaciones:
+
+  - nombre: ejecuta
+    origen: Corredor
+    destino: Sesion
+    cardinalidad: 1:N
+
+  - nombre: se_desarrolla_en
+    origen: Sesion
+    destino: ZonaIntensidad
+    cardinalidad: N:1
+
+  - nombre: acumula
+    origen: Sesion
+    destino: CargaEntrenamiento
+    cardinalidad: N:1
+    descripcion: Las sesiones de una ventana temporal agregan a la carga
+
+  - nombre: persigue
+    origen: Corredor
+    destino: Objetivo
+    cardinalidad: 1:N
+
+  - nombre: determina
+    origen: Objetivo
+    destino: FaseEntrenamiento
+    cardinalidad: 1:1
+    descripcion: La proximidad a la fecha meta define la fase vigente
+
+  - nombre: incrementa_riesgo_de
+    origen: CargaEntrenamiento
+    destino: Lesion
+    cardinalidad: 1:N
+    descripcion: >
+      Relación causal central del dominio. Valores de ACWR fuera del rango
+      de referencia y picos de sesión elevan la probabilidad de lesión.
+
+  - nombre: predispone_a
+    origen: Lesion
+    destino: Lesion
+    cardinalidad: N:N
+    descripcion: >
+      Lesión previa es el factor de riesgo individual con evidencia de
+      mayor calidad para lesión futura
+
+  - nombre: recibe
+    origen: Corredor
+    destino: Recomendacion
+    cardinalidad: 1:N
+
+  - nombre: fundamentada_en
+    origen: Recomendacion
+    destino: FuenteConocimiento
+    cardinalidad: N:N
+    descripcion: >
+      Relación que materializa el aporte de RAG frente al sistema previo:
+      toda recomendación es trazable a conocimiento curado
+
+  - nombre: condiciona
+    origen: FaseEntrenamiento
+    destino: Recomendacion
+    cardinalidad: 1:N
+
+  - nombre: modula
+    origen: Corredor
+    destino: CargaEntrenamiento
+    cardinalidad: 1:1
+    descripcion: >
+      El nivel del corredor modifica los umbrales tolerables de incremento
+      de carga; los umbrales no son universales
+
+# -----------------------------------------------------------------------------
+# AXIOMAS DEL DOMINIO
+# -----------------------------------------------------------------------------
+# Reglas de inferencia declarativas. Representan conocimiento simbólico
+# explícito, complementario al conocimiento recuperado vía RAG.
+# -----------------------------------------------------------------------------
+axiomas:
+
+  - id: AX-01
+    enunciado: >
+      Si ACWR > 1.5 entonces el riesgo de lesión se considera elevado y la
+      recomendación debe priorizar recuperación.
+    tipo: regla_riesgo
+    soporte_evidencia: moderado
+
+  - id: AX-02
+    enunciado: >
+      Si el corredor tiene historial de lesión previa, cualquier umbral de
+      incremento de carga se reduce respecto al valor de referencia.
+    tipo: regla_riesgo
+    soporte_evidencia: alto
+
+  - id: AX-03
+    enunciado: >
+      Un incremento del volumen en zona sub-LT1 no equivale en estrés a un
+      incremento equivalente en zona sobre-LT2.
+    tipo: regla_equivalencia
+    soporte_evidencia: alto
+
+  - id: AX-04
+    enunciado: >
+      Si semanas_restantes_meta <= 3 entonces la fase es tapering y el volumen
+      debe reducirse entre 41% y 60% manteniendo la intensidad.
+    tipo: regla_periodizacion
+    soporte_evidencia: alto
+
+  - id: AX-05
+    enunciado: >
+      El umbral de incremento semanal tolerable es función del nivel del
+      corredor; no existe un valor único aplicable a toda la población.
+    tipo: regla_personalizacion
+    soporte_evidencia: moderado
