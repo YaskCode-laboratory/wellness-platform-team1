@@ -3,9 +3,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# El proyecto se declara explícitamente. Sin esto, firebase-admin toma el
-# proyecto por defecto de las credenciales ADC, que puede no ser el correcto.
-GCP_PROJECT = "runcoach-ai-496921"
+from src.utils.config import GCP_PROJECT
 
 
 def init_firebase() -> firestore.Client:
