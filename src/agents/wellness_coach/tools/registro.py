@@ -1,11 +1,11 @@
 """Registro central de herramientas del Wellness Coach Agent.
 
-Concentra dos cosas que deben mantenerse sincronizadas: las declaraciones
-que se le entregan a Gemini (que describen nombre, proposito y parametros
-de cada herramienta) y el despacho real hacia la funcion Python que hace
-el trabajo. Mantenerlas juntas evita que se declare una herramienta que ya
-no existe, o que exista una funcion que el modelo nunca podra invocar
-porque no fue declarada.
+_HERRAMIENTAS es la fuente de verdad, como diccionarios Python simples que
+se pueden inspeccionar libremente (incluido en pruebas). Los objetos del
+SDK de Vertex AI (FunctionDeclaration, Tool) estan respaldados por
+protobuf y no garantizan lectura de vuelta de los valores con los que se
+construyen -- se arman a partir de esta lista unicamente en el momento de
+hablar con Gemini, nunca se inspeccionan despues de construidos.
 """
 
 from vertexai.generative_models import FunctionDeclaration, Tool
@@ -17,39 +17,39 @@ from src.agents.wellness_coach.tools.historial import (
     consultar_progreso_objetivo,
 )
 
-_DECLARACIONES = [
-    FunctionDeclaration(
-        name="consultar_historial_sesiones",
-        description="Devuelve las sesiones de entrenamiento mas recientes del corredor.",
-        parameters={
+_HERRAMIENTAS = [
+    {
+        "name": "consultar_historial_sesiones",
+        "description": "Devuelve las sesiones de entrenamiento mas recientes del corredor.",
+        "parameters": {
             "type": "object",
             "properties": {
                 "n": {"type": "integer", "description": "Cantidad de sesiones a devolver, por defecto 5"},
             },
         },
-    ),
-    FunctionDeclaration(
-        name="consultar_progreso_objetivo",
-        description="Compara la carga semanal actual del corredor contra su meta activa.",
-        parameters={"type": "object", "properties": {}},
-    ),
-    FunctionDeclaration(
-        name="consultar_clima",
-        description=(
+    },
+    {
+        "name": "consultar_progreso_objetivo",
+        "description": "Compara la carga semanal actual del corredor contra su meta activa.",
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "consultar_clima",
+        "description": (
             "Devuelve condiciones climaticas actuales de la ciudad del corredor. "
             "Usar solo si la pregunta involucra entrenar hoy o en dias proximos "
             "y el clima es relevante."
         ),
-        parameters={"type": "object", "properties": {}},
-    ),
-    FunctionDeclaration(
-        name="consultar_base_conocimiento",
-        description=(
+        "parameters": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "consultar_base_conocimiento",
+        "description": (
             "Recupera fragmentos verificables de la base de conocimiento sobre "
             "carga de entrenamiento, lesiones, nutricion, tapering, recuperacion "
             "y zonas de intensidad. Usar para cualquier pregunta de dominio."
         ),
-        parameters={
+        "parameters": {
             "type": "object",
             "properties": {
                 "consulta": {
@@ -59,13 +59,25 @@ _DECLARACIONES = [
             },
             "required": ["consulta"],
         },
-    ),
+    },
 ]
 
 
 def obtener_tool_vertexai() -> Tool:
-    """Objeto Tool listo para pasar a GenerativeModel(tools=[...])."""
-    return Tool(function_declarations=_DECLARACIONES)
+    """Construye el objeto Tool del SDK a partir de _HERRAMIENTAS.
+
+    Se arma en cada llamada, no se cachea como objeto SDK a nivel de modulo,
+    para que _HERRAMIENTAS siga siendo la unica fuente de verdad editable.
+    """
+    declaraciones = [
+        FunctionDeclaration(
+            name=h["name"],
+            description=h["description"],
+            parameters=h["parameters"],
+        )
+        for h in _HERRAMIENTAS
+    ]
+    return Tool(function_declarations=declaraciones)
 
 
 def despachar(nombre_funcion: str, argumentos: dict, user_id: str, ciudad: str | None = None) -> dict:
