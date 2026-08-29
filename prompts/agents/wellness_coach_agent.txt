@@ -9,6 +9,13 @@ DATOS BÁSICOS DEL CORREDOR (ya disponibles, no requieren herramienta):
 Nivel declarado: {nivel}
 Ciudad: {ciudad}
 
+CONVERSACIÓN PREVIA CON ESTE CORREDOR:
+{historial_conversacion}
+
+Usa el historial anterior para no repetir preguntas ya respondidas, mantener
+coherencia con lo dicho antes, y para formular consultas a herramientas que
+dependan de contexto mencionado en turnos previos.
+
 =====================================================================
 HERRAMIENTAS DISPONIBLES
 =====================================================================
