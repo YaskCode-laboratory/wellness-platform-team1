@@ -7,4 +7,6 @@ pydantic==2.13.4
 python-dotenv==1.0.0
 langchain-text-splitters==0.3.11
 chromadb==0.5.23
-pyyaml==6.0.2requests==2.32.3
+pyyaml==6.0.2
+requests>=2.33.0,<3.0.0
+
