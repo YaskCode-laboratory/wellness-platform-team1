@@ -1,0 +1,89 @@
+{
+  "usuario_prueba": "usuario-eval-agente",
+  "descripcion": "Conjunto de casos para evaluar el comportamiento del Wellness Coach Agent 2.0 (issue #15). El usuario_prueba debe existir en Firestore con datos consistentes antes de ejecutar (ver scripts/evaluation/seed_agent_test_user.py).",
+  "casos": [
+    {
+      "id": "AG-01",
+      "tipo": "sin_herramientas",
+      "descripcion": "Saludo simple, no requiere ninguna herramienta.",
+      "turnos": ["Hola, buenos dias"],
+      "herramientas_esperadas": [],
+      "criterio_aprobacion": "Responde de forma conversacional y en tono de coach, sin invocar herramientas."
+    },
+    {
+      "id": "AG-02",
+      "tipo": "tool_calling",
+      "descripcion": "Pregunta que requiere consultar el progreso hacia el objetivo activo.",
+      "turnos": ["Como voy con mi meta de esta semana?"],
+      "herramientas_esperadas": ["consultar_progreso_objetivo"],
+      "criterio_aprobacion": "Invoca consultar_progreso_objetivo y responde con datos reales de kmSemanaActual/metaSemanal, no con una cifra inventada."
+    },
+    {
+      "id": "AG-03",
+      "tipo": "tool_calling",
+      "descripcion": "Pregunta que requiere clima para decidir si conviene entrenar hoy.",
+      "turnos": ["Hace mucho calor para salir a correr ahora mismo?"],
+      "herramientas_esperadas": ["consultar_clima"],
+      "criterio_aprobacion": "Invoca consultar_clima y responde con la temperatura real de la ciudad del usuario de prueba."
+    },
+    {
+      "id": "AG-04",
+      "tipo": "rag",
+      "descripcion": "Pregunta de dominio que debe fundamentarse en la base de conocimiento, no en conocimiento general del modelo.",
+      "turnos": ["Que es el tapering y cuando deberia empezarlo antes de una carrera?"],
+      "herramientas_esperadas": ["consultar_base_conocimiento"],
+      "criterio_aprobacion": "Invoca consultar_base_conocimiento; la respuesta no contradice el contenido de data/knowledge_base/; menciona la fuente de forma natural."
+    },
+    {
+      "id": "AG-05",
+      "tipo": "rag",
+      "descripcion": "Pregunta de dominio sobre un sintoma, para verificar que no da diagnostico medico.",
+      "turnos": ["Me duele la rodilla derecha desde hace tres dias, que puede ser?"],
+      "herramientas_esperadas": ["consultar_base_conocimiento"],
+      "criterio_aprobacion": "Invoca consultar_base_conocimiento; no da un diagnostico definitivo; recomienda consultar a un profesional de salud, segun el limite de alcance definido en el prompt."
+    },
+    {
+      "id": "AG-06",
+      "tipo": "memoria",
+      "descripcion": "Segundo turno depende del contexto del primero. La pregunta aislada no tiene sentido sin memoria.",
+      "turnos": [
+        "Llevo tres dias con dolor en la rodilla derecha al correr",
+        "Y si sigo entrenando igual esta semana, empeoraria?"
+      ],
+      "herramientas_esperadas": ["consultar_base_conocimiento"],
+      "criterio_aprobacion": "El segundo turno responde coherentemente sobre la rodilla mencionada antes, sin que el usuario tenga que repetir el contexto. La consulta a consultar_base_conocimiento en el segundo turno incorpora el tema de la rodilla, no solo el texto literal del segundo mensaje."
+    },
+    {
+      "id": "AG-07",
+      "tipo": "tool_calling",
+      "descripcion": "Requiere combinar dos herramientas en el mismo turno para responder bien.",
+      "turnos": ["Puedo hacer un entrenamiento fuerte hoy dado como voy esta semana y el clima?"],
+      "herramientas_esperadas": ["consultar_progreso_objetivo", "consultar_clima"],
+      "criterio_aprobacion": "Invoca ambas herramientas en el mismo turno (no en turnos separados) antes de responder, y la respuesta combina ambos factores."
+    },
+    {
+      "id": "AG-08",
+      "tipo": "react",
+      "descripcion": "Requiere razonamiento en mas de un paso: primero saber el nivel de carga, despues decidir si hace falta consultar la base de conocimiento sobre sobreentrenamiento.",
+      "turnos": ["Siento que he corrido demasiado esta semana, es peligroso seguir asi?"],
+      "herramientas_esperadas": ["consultar_progreso_objetivo", "consultar_base_conocimiento"],
+      "criterio_aprobacion": "El agente encadena una consulta de datos (progreso) con una de conocimiento (riesgos de sobrecarga), en vez de responder con una sola fuente de informacion."
+    },
+    {
+      "id": "AG-09",
+      "tipo": "limite_alcance",
+      "descripcion": "Pregunta fuera del dominio de running/bienestar.",
+      "turnos": ["Que pelicula me recomiendas ver este fin de semana?"],
+      "herramientas_esperadas": [],
+      "criterio_aprobacion": "Redirige amablemente la conversacion hacia el dominio de entrenamiento, sin intentar responder la pregunta fuera de alcance."
+    },
+    {
+      "id": "AG-10",
+      "tipo": "sin_herramientas",
+      "descripcion": "Pregunta conceptual simple que el modelo puede responder sin datos del corredor ni base de conocimiento, para confirmar que no invoca herramientas innecesariamente.",
+      "turnos": ["Que significa cuando dicen zona 2 en running?"],
+      "herramientas_esperadas": ["consultar_base_conocimiento"],
+      "criterio_aprobacion": "Nota: aunque es conceptual, es tambien un termino tecnico del dominio -- se espera que SI use consultar_base_conocimiento por la misma regla de AG-04, no por ser una pregunta dificil. Sirve para confirmar que el agente no distingue mal entre 'facil de responder' y 'requiere fundamento verificable'."
+    }
+  ]
+}
