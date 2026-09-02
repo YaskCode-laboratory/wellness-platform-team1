@@ -123,5 +123,97 @@ class TestWellnessCoachAgentReAct(unittest.TestCase):
         self.assertEqual(self.mock_despachar.call_count, 2)
 
 
+class TestWellnessCoachAgentReintentoSinInvocar(unittest.TestCase):
+    """Cubre el hallazgo C detectado por Jose en la verificacion real:
+    el modelo narra o atribuye contenido a una herramienta sin invocarla."""
+
+    def setUp(self):
+        p1 = patch("src.agents.wellness_coach.agent.RepositorioCorredor")
+        p2 = patch("src.agents.wellness_coach.agent.MemoriaConversacional")
+        p3 = patch("src.agents.wellness_coach.agent.GenerativeModel")
+        p4 = patch("src.agents.wellness_coach.agent.obtener_tool_vertexai")
+        p5 = patch("src.agents.wellness_coach.agent.despachar")
+
+        self.MockRepo = p1.start()
+        self.MockMemoria = p2.start()
+        self.MockModel = p3.start()
+        p4.start()
+        self.mock_despachar = p5.start()
+
+        for p in (p1, p2, p3, p4, p5):
+            self.addCleanup(p.stop)
+
+        self.mock_perfil = MagicMock(nivel="intermedio", ciudad="Maracaibo")
+        self.MockRepo.return_value.obtener_perfil.return_value = self.mock_perfil
+        self.MockMemoria.return_value.obtener_historial.return_value = []
+        self.MockMemoria.return_value.formatear_para_prompt.return_value = "Sin conversacion previa."
+
+        self.mock_chat = MagicMock()
+        self.MockModel.return_value.start_chat.return_value = self.mock_chat
+
+    def test_reintenta_y_logra_invocar_tras_el_empuje(self):
+        """Replica el caso AG-05 real: el modelo anuncia consulta, se le
+        empuja una vez, y en el reintento si invoca la herramienta."""
+        self.mock_despachar.return_value = {
+            "fragmentos": [{"doc_id": "KB-004", "texto": "..."}],
+        }
+        self.mock_chat.send_message.side_effect = [
+            FakeResponse(text="Voy a consultar la base de conocimiento sobre esto."),
+            FakeResponse(function_calls=[
+                FakeFunctionCall("consultar_base_conocimiento", {"consulta": "dolor de rodilla"})
+            ]),
+            FakeResponse(text="Segun la base de conocimiento, el dolor de rodilla puede deberse a..."),
+        ]
+
+        agente = WellnessCoachAgent()
+        resultado = agente.conversar("u1", "me duele la rodilla, que puede ser?")
+
+        self.assertTrue(resultado["reintentoUtilizado"])
+        self.assertFalse(resultado["reintentoFallido"])
+        self.assertEqual(len(resultado["herramientasInvocadas"]), 1)
+        self.assertIn("Segun la base de conocimiento", resultado["respuesta"])
+        self.assertEqual(self.mock_chat.send_message.call_count, 3)
+        self.mock_chat.send_message.assert_any_call("me duele la rodilla, que puede ser?")
+
+    def test_reintento_agotado_usa_respuesta_de_respaldo(self):
+        """Replica la manifestacion 2 real: el modelo atribuye contenido a
+        la KB sin invocarla, ni siquiera despues del empuje. No se debe
+        confiar en ese texto -- se sustituye por una respuesta honesta."""
+        self.mock_chat.send_message.side_effect = [
+            FakeResponse(text="Segun la informacion que tengo en nuestra base de conocimiento, el dolor de rodilla es comun."),
+            FakeResponse(text="Segun la base de conocimiento, esto suele deberse a sobrecarga."),
+        ]
+
+        agente = WellnessCoachAgent()
+        resultado = agente.conversar("u1", "me duele la rodilla, que puede ser?")
+
+        self.assertTrue(resultado["reintentoUtilizado"])
+        self.assertTrue(resultado["reintentoFallido"])
+        self.assertEqual(resultado["herramientasInvocadas"], [])
+        self.assertIn("No logré completar", resultado["respuesta"])
+        self.mock_despachar.assert_not_called()
+        self.assertEqual(self.mock_chat.send_message.call_count, 2)
+
+    def test_no_reintenta_si_ya_invoco_una_herramienta_antes(self):
+        """Citar 'segun la base de conocimiento' DESPUES de haber invocado
+        la herramienta en el mismo turno es legitimo, no debe disparar
+        un reintento innecesario."""
+        self.mock_despachar.return_value = {"fragmentos": []}
+        self.mock_chat.send_message.side_effect = [
+            FakeResponse(function_calls=[
+                FakeFunctionCall("consultar_base_conocimiento", {"consulta": "tapering"})
+            ]),
+            FakeResponse(text="Segun la base de conocimiento, el tapering dura entre 1 y 3 semanas."),
+        ]
+
+        agente = WellnessCoachAgent()
+        resultado = agente.conversar("u1", "que es el tapering?")
+
+        self.assertFalse(resultado["reintentoUtilizado"])
+        self.assertFalse(resultado["reintentoFallido"])
+        self.assertEqual(len(resultado["herramientasInvocadas"]), 1)
+        self.assertEqual(self.mock_chat.send_message.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

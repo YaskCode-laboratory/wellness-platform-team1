@@ -157,3 +157,99 @@ aceptación de #11 exige "modelar el flujo de razonamiento y toma de
 decisiones" como parte del diseño, antes de implementarlo.
 
 ## 7. Ubicación en el código
+
+src/agents/wellness_coach/
+init.py
+agent.py # WellnessCoachAgent (issues #12–#14)
+memory.py # Estrategia de memoria de largo plazo (issue #12)
+tools/
+init.py
+historial.py # consultar_historial_sesiones, consultar_progreso_objetivo
+clima.py # consultar_clima (Open-Meteo)
+conocimiento.py # consultar_base_conocimiento
+
+Paquete nuevo, independiente de `src/agents/wellness/`, siguiendo la simetría
+ya establecida con `src/agents/{nutrition,motivation,analytics}/` (reservados
+para el Sprint 3). `RepositorioCorredor` (`src/data/repositorio_corredor.py`)
+es compartido entre `WellnessAgent` y `WellnessCoachAgent` — ver
+`docs/architecture/agent-architecture.md` §1.5 para el diagrama de esa
+relación.
+
+## 8. Coherencia con la arquitectura existente
+
+- Reutiliza `RepositorioCorredor` (issue #10) sin duplicar acceso a datos.
+- Reutiliza el retriever RAG (`src/rag/retriever/retriever.py`) sin
+  modificarlo.
+- No introduce ningún framework de agentes nuevo — se implementa sobre el SDK
+  directo de Vertex AI (`vertexai.generative_models`), consistente con la
+  decisión ya tomada por el equipo para este sprint (ver
+  `docs/architecture/agent-architecture.md` §2.1, pendiente de completar al
+  iniciar #13).
+- Requiere un cambio de modelo de datos ya decidido: campo `ciudad` en el
+  perfil de usuario (`users`), y una colección nueva `conversations` para la
+  memoria de largo plazo (diseño detallado en el issue #12).
+
+## 9. Alcance explícitamente fuera de este issue
+
+Por tratarse de un issue de diseño, quedan fuera de #11 y se abordan en los
+issues indicados:
+
+- Implementación de las cuatro herramientas → #13
+- Implementación de la memoria conversacional → #12
+- Implementación del ciclo ReAct completo → #14
+- El endpoint de chat (`POST /agent-coach/{userId}/chat`) → #12
+- Casos de prueba y evaluación del comportamiento → #15
+
+## 10. Corrección post-verificación real: reintento acotado ante declaración sin invocar (issue #15)
+
+La verificación con Vertex AI real reveló que el modelo, en algunos turnos,
+narra la intención de usar una herramienta ("voy a consultar la base de
+conocimiento") o directamente atribuye contenido a ella ("según la base de
+conocimiento...") sin emitir una llamada a función real. El ciclo ReAct
+original cerraba el turno inmediatamente al no recibir `function_calls`,
+entregando al usuario una promesa incumplida o una atribución falsa — el
+mismo problema de cita alucinada identificado en el Sprint 1, en la
+superficie conversacional.
+
+### Alternativa considerada y descartada
+
+Se investigó `ToolConfig` con `FunctionCallingConfig.Mode.ANY`, que fuerza
+al modelo a emitir una llamada a función en vez de texto. Se descartó por
+una limitación real del SDK, confirmada contra su documentación oficial:
+`ChatSession.send_message()` no acepta un `tool_config` por mensaje — solo
+puede fijarse a nivel de todo el `GenerativeModel`. Aplicarlo globalmente
+forzaría una llamada a función en **cada** turno, incluidos los que
+legítimamente no requieren ninguna (un saludo, una pregunta fuera de
+dominio), rompiendo ese comportamiento correcto.
+
+### Solución adoptada
+
+Una heurística textual (`_declara_uso_de_herramienta_sin_invocar()` en
+`src/agents/wellness_coach/agent.py`) que detecta frases características de
+este patrón, con un reintento acotado a **una sola vez por turno**: si el
+modelo declara intención sin invocar, se le reenvía un mensaje explícito
+pidiéndole que invoque la función en vez de narrarla. Si el reintento
+tampoco produce una llamada real, se descarta el texto del modelo (no se
+confía en una segunda promesa) y se sustituye por una respuesta honesta que
+admite no haber podido completar la consulta.
+
+La heurística solo se evalúa cuando **ninguna herramienta se ha invocado
+todavía en el turno actual** — citar "según la base de conocimiento"
+después de haber invocado realmente `consultar_base_conocimiento` es una
+atribución legítima, no una señal de alarma.
+
+### Limitaciones conocidas, documentadas explícitamente
+
+- **Falsos negativos**: si el modelo declara la intención con una frase no
+  incluida en la lista, no se detecta y el turno se cierra con una promesa
+  incumplida. La lista se amplía empíricamente a medida que se observan
+  nuevas formulaciones en evaluaciones posteriores.
+- **Falsos positivos**: el uso legítimo de alguna de estas frases sin ser
+  una promesa vacía consume un reintento innecesario — costo aceptable
+  frente al riesgo de una atribución falsa sin corregir.
+
+Esta es una mitigación heurística, no una garantía estructural — a
+diferencia de `validar_fuentes()` del Sprint 1, que sí ofrece una garantía
+programática completa sobre las citas del modo RAG de un solo turno. Queda
+como candidato de mejora futura evaluar si versiones más recientes del SDK
+permiten aplicar `tool_config` por mensaje dentro de una sesión de chat.
