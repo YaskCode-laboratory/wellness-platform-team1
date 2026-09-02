@@ -33,6 +33,8 @@ def calcular_metricas(resultados: list[dict]) -> dict:
 
     casos_con_herramienta_correcta = sum(1 for r in resultados if r["coincidencia_herramientas"])
     casos_con_limite_alcanzado = sum(1 for r in resultados if r["limite_alcanzado"])
+    casos_con_reintento_utilizado = sum(1 for r in resultados if r.get("reintento_utilizado", False))
+    casos_con_reintento_fallido = sum(1 for r in resultados if r.get("reintento_fallido", False))
     latencia_promedio_ms = round(sum(r["latencia_ms"] for r in resultados) / total)
 
     por_tipo: dict[str, dict] = {}
@@ -47,6 +49,8 @@ def calcular_metricas(resultados: list[dict]) -> dict:
         "total_casos": total,
         "tasa_acierto_herramientas": round(casos_con_herramienta_correcta / total, 3),
         "casos_con_limite_alcanzado": casos_con_limite_alcanzado,
+        "casos_con_reintento_utilizado": casos_con_reintento_utilizado,
+        "casos_con_reintento_fallido": casos_con_reintento_fallido,
         "latencia_promedio_ms": latencia_promedio_ms,
         "por_tipo": por_tipo,
     }
@@ -65,6 +69,8 @@ def evaluar_caso(agente: WellnessCoachAgent, user_id: str, caso: dict) -> dict:
     herramientas_invocadas_total = []
     respuesta_final = ""
     limite_alcanzado = False
+    reintento_utilizado = False
+    reintento_fallido = False
 
     inicio = time.perf_counter()
     for mensaje in caso["turnos"]:
@@ -72,6 +78,10 @@ def evaluar_caso(agente: WellnessCoachAgent, user_id: str, caso: dict) -> dict:
         herramientas_invocadas_total.extend(resultado["herramientasInvocadas"])
         respuesta_final = resultado["respuesta"]
         limite_alcanzado = limite_alcanzado or resultado["limiteAlcanzado"]
+        # .get() con default: compatibilidad con conversar() de versiones
+        # previas a la correccion del hallazgo C, que no devolvian estas claves.
+        reintento_utilizado = reintento_utilizado or resultado.get("reintentoUtilizado", False)
+        reintento_fallido = reintento_fallido or resultado.get("reintentoFallido", False)
     latencia_ms = round((time.perf_counter() - inicio) * 1000)
 
     return {
@@ -85,6 +95,8 @@ def evaluar_caso(agente: WellnessCoachAgent, user_id: str, caso: dict) -> dict:
         ),
         "respuesta_final": respuesta_final,
         "limite_alcanzado": limite_alcanzado,
+        "reintento_utilizado": reintento_utilizado,
+        "reintento_fallido": reintento_fallido,
         "latencia_ms": latencia_ms,
     }
 
@@ -96,6 +108,18 @@ def main():
 
     resultados = []
     for i, caso in enumerate(golden_set["casos"], 1):
+        # CORRECCION (hallazgo A, verificacion real #15): se reinicia la
+        # memoria conversacional al INICIO de cada caso, no solo una vez al
+        # sembrar el usuario. Sin esto, un caso multi-turno como AG-06
+        # (que introduce dolor de rodilla) contaminaba todos los casos
+        # posteriores en la misma corrida -- la evaluacion dejaba de ser
+        # reproducible, porque el resultado dependia del orden de ejecucion.
+        # Dentro de un mismo caso multi-turno (AG-06 en si) la memoria SI
+        # se acumula entre sus propios turnos, porque eso es exactamente lo
+        # que ese caso mide -- solo se limpia ENTRE casos, nunca dentro de
+        # uno.
+        agente.memoria.limpiar_historial(user_id)
+
         print(f"[{i}/{len(golden_set['casos'])}] Evaluando {caso['id']} ({caso['tipo']})...")
         resultado = evaluar_caso(agente, user_id, caso)
         resultados.append(resultado)
