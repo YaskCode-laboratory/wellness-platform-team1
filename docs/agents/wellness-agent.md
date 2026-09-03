@@ -253,3 +253,33 @@ diferencia de `validar_fuentes()` del Sprint 1, que sí ofrece una garantía
 programática completa sobre las citas del modo RAG de un solo turno. Queda
 como candidato de mejora futura evaluar si versiones más recientes del SDK
 permiten aplicar `tool_config` por mensaje dentro de una sesión de chat.
+
+## 11. Corrección post-verificación real: principio de precedencia consultar/preguntar (hallazgo E, issue #15)
+
+La tercera medición reveló que el agente, ante una pregunta de razonamiento
+combinado (AG-08: *"siento que he corrido demasiado esta semana, ¿es
+peligroso seguir así?"*), invocó `consultar_base_conocimiento` pero le
+preguntó al corredor su kilometraje semanal en vez de invocar
+`consultar_progreso_objetivo` — un dato que la herramienta ya podía darle.
+
+### Causa raíz
+
+El prompt describía cuándo usar cada herramienta de forma aislada, sin
+establecer un principio general sobre qué hacer cuando falta un dato del
+corredor: preguntar o consultar. Frente a la ambigüedad, el modelo eligió
+preguntar, cumpliendo la regla de "no inventar datos" pero sin agotar antes
+la vía de obtenerlos por herramienta.
+
+### Corrección
+
+Se agregó un principio explícito de precedencia en
+`prompts/agents/wellness_coach_agent.txt`, antes del listado de
+herramientas: consultar antes que preguntar, reservando las preguntas para
+percepciones subjetivas, intenciones y preferencias — datos que ninguna
+herramienta puede aportar.
+
+### Verificación pendiente
+
+<!-- Completar tras la cuarta medición: tasa de acierto resultante,
+confirmación de que AG-01 y AG-09 (los dos casos que esperan cero
+herramientas) no regresaron. -->
