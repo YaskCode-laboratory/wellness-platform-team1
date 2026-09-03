@@ -1,12 +1,13 @@
-# tests/unit/test_tools.py
 import unittest
 from unittest.mock import MagicMock, patch
+
+import requests
 
 from src.agents.wellness_coach.tools.historial import (
     consultar_historial_sesiones,
     consultar_progreso_objetivo,
 )
-from src.agents.wellness_coach.tools.clima import consultar_clima
+from src.agents.wellness_coach.tools.clima import MENSAJE_SERVICIO_NO_DISPONIBLE, consultar_clima
 
 
 class TestHerramientaHistorial(unittest.TestCase):
@@ -73,6 +74,69 @@ class TestHerramientaClima(unittest.TestCase):
         self.assertTrue(resultado["disponible"])
         self.assertEqual(resultado["temperaturaC"], 31.5)
         self.assertEqual(mock_get.call_count, 2)
+
+
+class TestHerramientaClimaDegradacion(unittest.TestCase):
+    """Hallazgo D (segunda medicion real #15): un 500 de Open-Meteo tumbaba
+    la conversacion completa del agente. Estas pruebas verifican que
+    consultar_clima degrada (retorna disponible: False) en vez de propagar
+    la excepcion, para cualquier fallo del servicio externo."""
+
+    def _geo_ok(self):
+        geo_resp = MagicMock()
+        geo_resp.json.return_value = {"results": [{"latitude": 10.6, "longitude": -71.6}]}
+        geo_resp.raise_for_status.return_value = None
+        return geo_resp
+
+    @patch("src.agents.wellness_coach.tools.clima.requests.get")
+    def test_error_http_del_servicio_degrada(self, mock_get):
+        forecast_resp = MagicMock()
+        forecast_resp.raise_for_status.side_effect = requests.exceptions.HTTPError("500 Server Error")
+        mock_get.side_effect = [self._geo_ok(), forecast_resp]
+
+        resultado = consultar_clima("Maracaibo")
+
+        self.assertFalse(resultado["disponible"])
+        self.assertEqual(resultado["mensaje"], MENSAJE_SERVICIO_NO_DISPONIBLE)
+
+    @patch("src.agents.wellness_coach.tools.clima.requests.get")
+    def test_timeout_degrada(self, mock_get):
+        mock_get.side_effect = [self._geo_ok(), requests.exceptions.Timeout("tiempo agotado")]
+
+        resultado = consultar_clima("Maracaibo")
+
+        self.assertFalse(resultado["disponible"])
+        self.assertEqual(resultado["mensaje"], MENSAJE_SERVICIO_NO_DISPONIBLE)
+
+    @patch("src.agents.wellness_coach.tools.clima.requests.get")
+    def test_error_de_conexion_degrada(self, mock_get):
+        mock_get.side_effect = [self._geo_ok(), requests.exceptions.ConnectionError("sin conexion")]
+
+        resultado = consultar_clima("Maracaibo")
+
+        self.assertFalse(resultado["disponible"])
+        self.assertEqual(resultado["mensaje"], MENSAJE_SERVICIO_NO_DISPONIBLE)
+
+    @patch("src.agents.wellness_coach.tools.clima.requests.get")
+    def test_geocodificacion_con_error_http_degrada(self, mock_get):
+        mock_get.side_effect = requests.exceptions.HTTPError("500 Server Error")
+
+        resultado = consultar_clima("Maracaibo")
+
+        self.assertFalse(resultado["disponible"])
+        self.assertIn("No se encontraron coordenadas", resultado["mensaje"])
+
+    @patch("src.agents.wellness_coach.tools.clima.requests.get")
+    def test_respuesta_no_json_degrada(self, mock_get):
+        forecast_resp = MagicMock()
+        forecast_resp.raise_for_status.return_value = None
+        forecast_resp.json.side_effect = ValueError("respuesta no es JSON valido")
+        mock_get.side_effect = [self._geo_ok(), forecast_resp]
+
+        resultado = consultar_clima("Maracaibo")
+
+        self.assertFalse(resultado["disponible"])
+        self.assertEqual(resultado["mensaje"], MENSAJE_SERVICIO_NO_DISPONIBLE)
 
 
 if __name__ == "__main__":
