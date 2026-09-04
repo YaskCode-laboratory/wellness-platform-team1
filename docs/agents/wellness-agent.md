@@ -278,11 +278,20 @@ herramientas: consultar antes que preguntar, reservando las preguntas para
 percepciones subjetivas, intenciones y preferencias — datos que ninguna
 herramienta puede aportar.
 
-### Verificación pendiente
+### Verificación real
 
-<!-- Completar tras la cuarta medición: tasa de acierto resultante,
-confirmación de que AG-01 y AG-09 (los dos casos que esperan cero
-herramientas) no regresaron. -->
+La cuarta medición confirmó que AG-01 y AG-09 no regresaron: ambos se
+mantuvieron con `herramientas_invocadas: []`, igual que antes de esta
+corrección. Ninguno de los diez casos sufrió una regresión.
+
+AG-08, el caso que motivó esta corrección, mejoró parcialmente: el agente
+dejó de preguntarle al corredor su kilometraje y pasó a consultarlo
+correctamente con `consultar_progreso_objetivo`. Sin embargo, el patrón de
+fondo — delegar en el usuario una decisión que corresponde al agente —
+reapareció de otra forma: el agente pidió permiso antes de invocar
+`consultar_base_conocimiento`, en vez de hacerlo directamente. Este
+comportamiento desplazado se documenta y corrige en la sección 12
+(hallazgo F).
 
 ## 12. Corrección post-verificación real: el patrón se desplazó, no se eliminó (hallazgo F, issue #15)
 
@@ -322,11 +331,28 @@ se prohibió explícitamente pedir permiso antes de invocar, y se habilitó
 el encadenamiento de varias herramientas en un mismo turno cuando la
 pregunta lo requiera.
 
-### Verificación pendiente
+### Verificación real
 
-<!-- Completar tras la quinta medición: si AG-08 pasa con las dos
-herramientas esperadas, y si AG-02/AG-04/AG-10 se mantienen sin invocar
-herramientas de más (riesgo del parrafo de encadenamiento). Este es el
-ultimo intento acordado: si la quinta medicion no resuelve AG-08, el
-resultado se documenta como limitacion conocida y el issue #15 se cierra
-con la tasa que arroje esta corrida. -->
+La quinta medición confirmó que la corrección resolvió AG-08 por completo:
+el agente invocó ambas herramientas esperadas en el mismo turno
+(`consultar_progreso_objetivo` seguido de `consultar_base_conocimiento`,
+con una consulta que incorpora el contexto de la pregunta: *"peligros de
+aumentar demasiado la carga de entrenamiento semanal"*), y cerró con una
+respuesta completa y fundamentada, sin pedir permiso.
+
+No se observó ninguna regresión en los casos sensibles al riesgo del
+párrafo de encadenamiento: AG-02, AG-04 y AG-10 se mantuvieron invocando
+una sola herramienta cada uno; AG-01 y AG-09 siguieron sin invocar
+ninguna.
+
+**Resultado final: tasa de acierto de herramientas 100% (10/10 casos)**,
+sin necesitar el reintento del hallazgo C en ningún caso de esta corrida.
+El issue #15 se cierra con este resultado.
+
+| Métrica | v1 | v3 | v4 | v5 |
+|---|---|---|---|---|
+| Tasa de acierto | 70.0% | 90.0% | 90.0% | **100.0%** |
+| Latencia promedio | 8714 ms | 8544 ms | 7516 ms | 7466 ms |
+| Casos completados | 10/10 | 10/10 | 10/10 | 10/10 |
+| Límite de iteraciones alcanzado | 0 | 0 | 0 | 0 |
+| Reintentos utilizados (hallazgo C) | — | 1 | 0 | 0 |
