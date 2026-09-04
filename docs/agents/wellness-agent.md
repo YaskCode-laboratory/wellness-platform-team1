@@ -283,3 +283,50 @@ herramienta puede aportar.
 <!-- Completar tras la cuarta medición: tasa de acierto resultante,
 confirmación de que AG-01 y AG-09 (los dos casos que esperan cero
 herramientas) no regresaron. -->
+
+## 12. Corrección post-verificación real: el patrón se desplazó, no se eliminó (hallazgo F, issue #15)
+
+La corrección del hallazgo E funcionó para lo que apuntaba: el agente dejó
+de preguntar el kilometraje al corredor y pasó a consultarlo con
+`consultar_progreso_objetivo`. Pero AG-08 siguió fallando, de forma
+exactamente invertida: en la tercera medición faltaba el progreso; en la
+cuarta, el agente consultó el progreso correctamente pero cerró su
+respuesta **pidiendo permiso** para consultar la base de conocimiento en
+vez de hacerlo.
+
+### Causa raíz
+
+El principio de precedencia se había escrito sobre "un dato del corredor",
+una categoría más estrecha que el patrón real que se quería corregir
+("delegar en el usuario una decisión que le corresponde al agente"). La
+base de conocimiento no es un dato del corredor, así que quedaba fuera del
+alcance literal de la regla — el agente no la desobedeció, la aplicó
+correctamente y la regla no llegaba hasta ahí. Además, ningún punto del
+prompt prohibía explícitamente pedir permiso antes de invocar una
+herramienta.
+
+### Lección de diseño
+
+Una corrección de prompt puede desplazar un comportamiento en vez de
+eliminarlo, cuando la regla se escribe sobre una categoría más estrecha que
+el patrón real. La métrica agregada oculta esto: la tasa de acierto fue
+90% tanto antes como después de la corrección de E, sobre dos fallos
+completamente distintos. Solo la inspección caso por caso —guardando la
+respuesta textual completa, no solo si acertó o no— revela el cambio.
+
+### Corrección aplicada
+
+Se amplió el principio de precedencia de "dato del corredor" a cualquier
+información disponible vía herramienta (incluida la base de conocimiento),
+se prohibió explícitamente pedir permiso antes de invocar, y se habilitó
+el encadenamiento de varias herramientas en un mismo turno cuando la
+pregunta lo requiera.
+
+### Verificación pendiente
+
+<!-- Completar tras la quinta medición: si AG-08 pasa con las dos
+herramientas esperadas, y si AG-02/AG-04/AG-10 se mantienen sin invocar
+herramientas de más (riesgo del parrafo de encadenamiento). Este es el
+ultimo intento acordado: si la quinta medicion no resuelve AG-08, el
+resultado se documenta como limitacion conocida y el issue #15 se cierra
+con la tasa que arroje esta corrida. -->
