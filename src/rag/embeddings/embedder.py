@@ -3,9 +3,7 @@
 import vertexai
 from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
 
-GCP_PROJECT = "runcoach-ai-496921"
-GCP_LOCATION = "us-central1"
-EMBEDDING_MODEL = "text-embedding-004"
+from src.utils.config import EMBEDDING_MODEL, GCP_LOCATION, GCP_PROJECT
 
 # El límite de Vertex AI es por TOKENS totales por petición (20.000),
 # no por cantidad de textos. Usamos un presupuesto con margen de seguridad.
