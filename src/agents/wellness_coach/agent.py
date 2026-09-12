@@ -29,8 +29,29 @@ los que legitimamente no requieren ninguna herramienta (por ejemplo un
 saludo), rompiendo ese comportamiento correcto. Se opta por una heuristica
 textual con un reintento acotado -- ver limitaciones documentadas en
 _declara_uso_de_herramienta_sin_invocar().
+
+CORRECCION S2-04 (revision del PR #25): el hallazgo D protegio
+consultar_clima contra fallos de Open-Meteo, pero fue una correccion
+reactiva sobre el sintoma medido, no sobre el principio. Las otras tres
+herramientas dependen de Firestore y ChromaDB, y un fallo en cualquiera de
+ellas se propagaba sin control desde despachar() hasta tumbar la
+conversacion completa -- el mismo patron del hallazgo D en otra superficie.
+
+El punto de despacho es el unico lugar del sistema por donde pasan TODAS
+las herramientas, presentes y futuras. Protegerlo ahi, y no herramienta por
+herramienta, es lo que convierte la correccion puntual en una garantia
+estructural: cualquier herramienta que se agregue en el Sprint 3 hereda la
+degradacion sin tener que acordarse de implementarla.
+
+Se reutiliza deliberadamente el contrato {"disponible": False, "mensaje":
+...} que el hallazgo D introdujo para el clima, en vez de definir una forma
+de error nueva. El modelo ya demostro empiricamente (AG-07, primera
+medicion real) que sabe interpretar ese contrato y seguir conversando con
+las fuentes que si tiene; darle un segundo formato para la misma situacion
+seria pedirle que aprenda dos convenciones donde basta una.
 """
 
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -41,6 +62,8 @@ from src.agents.wellness_coach.memory import MemoriaConversacional
 from src.agents.wellness_coach.tools.registro import despachar, obtener_tool_vertexai
 from src.data.repositorio_corredor import RepositorioCorredor
 from src.utils.config import GCP_LOCATION, GCP_PROJECT, GEMINI_MODEL
+
+logger = logging.getLogger(__name__)
 
 MAX_ITERACIONES_HERRAMIENTAS = 5
 
@@ -57,6 +80,12 @@ RESPUESTA_REINTENTO_FALLIDO = (
     "No logré completar la consulta necesaria para responder con "
     "precisión en este momento. ¿Podrías intentar de nuevo o reformular "
     "tu pregunta?"
+)
+
+MENSAJE_HERRAMIENTA_NO_DISPONIBLE = (
+    "Esta consulta no está disponible en este momento. Responde con la "
+    "información que sí tengas, y di explícitamente que este dato no pudo "
+    "consultarse en vez de suponerlo."
 )
 
 _FRASES_DECLARACION_SIN_INVOCAR = (
@@ -106,6 +135,43 @@ def _declara_uso_de_herramienta_sin_invocar(texto: str) -> bool:
     return any(frase in texto_normalizado for frase in _FRASES_DECLARACION_SIN_INVOCAR)
 
 
+def _despachar_con_degradacion(
+    nombre_funcion: str, argumentos: dict, user_id: str, ciudad: str | None
+) -> tuple[dict, bool]:
+    """Despacha una herramienta sin dejar que un fallo suyo tumbe el turno.
+
+    Devuelve (resultado, degradada). Cuando la herramienta falla, el
+    resultado es el contrato de no disponibilidad del hallazgo D, de modo
+    que el modelo recibe una observacion valida y puede seguir razonando
+    con las fuentes que si respondieron.
+
+    Se captura Exception de forma amplia, a proposito: el objetivo no es
+    anticipar que puede fallar en Firestore, ChromaDB o un servicio HTTP,
+    sino garantizar que nada de lo que pase ahi adentro llegue a romper la
+    conversacion. Un fallo de infraestructura y un ValueError por un nombre
+    de herramienta que el modelo alucino producen la misma degradacion de
+    cara al usuario; la distincion entre ambos vive en el log, no en la
+    conversacion.
+
+    El log lleva la excepcion real con traceback (logger.exception), y el
+    modelo recibe unicamente un mensaje generico: exponer detalles internos
+    de la infraestructura en la superficie conversacional no le sirve al
+    corredor y filtra informacion del sistema.
+    """
+    try:
+        return despachar(nombre_funcion, argumentos, user_id=user_id, ciudad=ciudad), False
+    except Exception:
+        logger.exception(
+            "Fallo la herramienta '%s' con argumentos %s; se degrada el turno.",
+            nombre_funcion,
+            argumentos,
+        )
+        return {
+            "disponible": False,
+            "mensaje": MENSAJE_HERRAMIENTA_NO_DISPONIBLE,
+        }, True
+
+
 class WellnessCoachAgent:
     """Agente conversacional con memoria de largo plazo y tool calling."""
 
@@ -142,6 +208,7 @@ class WellnessCoachAgent:
         response = chat.send_message(mensaje)
 
         herramientas_invocadas: list[dict] = []
+        herramientas_degradadas: list[str] = []
         limite_alcanzado = False
         reintento_utilizado = False
         reintento_fallido = False
@@ -173,8 +240,12 @@ class WellnessCoachAgent:
             partes_respuesta = []
             for fc in function_calls:
                 argumentos = dict(fc.args)
-                resultado = despachar(fc.name, argumentos, user_id=user_id, ciudad=perfil.ciudad)
+                resultado, degradada = _despachar_con_degradacion(
+                    fc.name, argumentos, user_id=user_id, ciudad=perfil.ciudad
+                )
                 herramientas_invocadas.append({"nombre": fc.name, "argumentos": argumentos})
+                if degradada:
+                    herramientas_degradadas.append(fc.name)
                 partes_respuesta.append(
                     Part.from_function_response(name=fc.name, response={"result": resultado})
                 )
@@ -199,6 +270,7 @@ class WellnessCoachAgent:
         return {
             "respuesta": texto_final,
             "herramientasInvocadas": herramientas_invocadas,
+            "herramientasDegradadas": herramientas_degradadas,
             "limiteAlcanzado": limite_alcanzado,
             "reintentoUtilizado": reintento_utilizado,
             "reintentoFallido": reintento_fallido,
