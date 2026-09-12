@@ -223,10 +223,23 @@ converger, exigido por el criterio de aceptación del issue.
 Golden set de 10 casos (`data/evaluation/agent_golden_set.json`) cubriendo
 seis tipos de comportamiento: sin herramientas, tool calling, RAG,
 memoria multi-turno, razonamiento ReAct encadenado, y límite de alcance
-del dominio. Un usuario de prueba fijo, sembrado de forma reproducible
-antes de cada corrida (`scripts/evaluation/seed_agent_test_user.py`), con
-memoria limpiada al inicio de cada caso (no solo al sembrar) para evitar
-contaminación entre casos.
+del dominio. Un usuario de prueba fijo, sembrado antes de cada corrida
+(`scripts/evaluation/seed_agent_test_user.py`), con memoria limpiada al
+inicio de cada caso (no solo al sembrar) para evitar contaminación entre
+casos.
+
+La reproducibilidad de esa siembra resultó ser, durante casi todo el
+sprint, más frágil de lo que se creía: las sesiones se fechaban relativas
+al día de hoy mientras la carga semanal se agrupa por semana calendario,
+de modo que el estado sembrado dependía del día en que se ejecutara la
+evaluación. Corregido al cerrar el sprint; el análisis está en
+`docs/evaluation/agent-evaluation.md`, sección 5.1.
+
+El criterio de acierto es de subconjunto —¿se invocó al menos lo
+esperado?— lo que significa que **mide recall de herramientas, no
+precisión**: invocar de más no penaliza, y los casos que esperan cero
+herramientas no pueden fallar. Ver sección 1.1 del documento de
+evaluación.
 
 ### 8.2 Evolución de la tasa de acierto
 
@@ -332,6 +345,22 @@ responderla.
 
 ## 9. Limitaciones conocidas
 
+- **El marco de evaluación mide recall de herramientas, no precisión.** El
+  criterio de subconjunto no penaliza invocar de más: en la quinta corrida
+  AG-07 invocó cinco herramientas donde se esperaban dos y se contabilizó
+  como acierto. Los casos que esperan cero herramientas (AG-01, AG-09)
+  tampoco pueden fallar, porque el conjunto vacío es subconjunto de
+  cualquier cosa; que no invocaran nada se verificó leyendo el JSON de
+  resultados, no por la métrica.
+- **La knowledge base no cubre entrenamiento en calor ni humedad.** Es la
+  laguna que provocó las tres consultas repetidas de AG-07, y es relevante
+  para el clima de Maracaibo, donde vive el usuario de prueba.
+- **AG-10 está mal etiquetado** como `sin_herramientas` cuando espera una
+  herramienta, lo que hace engañoso el desglose por tipo sin afectar la
+  tasa global.
+- **El ejemplo del principio de precedencia reproduce casi literalmente el
+  enunciado de AG-08**, de modo que parte de su acierto en la quinta
+  corrida puede deberse a esa cercanía y no a generalización del modelo.
 - **La heurística del hallazgo C es textual, no estructural.** Depende de
   una lista de frases en español que puede tener falsos negativos (una
   formulación del modelo no contemplada) o falsos positivos (un reintento
@@ -354,6 +383,12 @@ responderla.
 
 ## 10. Propuestas de mejora (Sprint 3)
 
+- Registrar precisión además de recall en las métricas de evaluación:
+  contabilizar las invocaciones no esperadas, y exigir igualdad en vez de
+  subconjunto para los casos que esperan cero herramientas.
+- Curar documentación sobre entrenamiento en calor y humedad para la
+  knowledge base.
+- Corregir la etiqueta de tipo de AG-10.
 - Ampliar el golden set con más casos de tipo `react`, para una métrica
   menos binaria en esa categoría.
 - Evaluar la migración a `google-genai` antes de que se retire el SDK

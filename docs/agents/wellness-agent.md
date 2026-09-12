@@ -345,13 +345,26 @@ párrafo de encadenamiento: AG-02, AG-04 y AG-10 se mantuvieron invocando
 una sola herramienta cada uno; AG-01 y AG-09 siguieron sin invocar
 ninguna.
 
-**Resultado final: tasa de acierto de herramientas 100% (10/10 casos)**,
-sin necesitar el reintento del hallazgo C en ningún caso de esta corrida.
-El issue #15 se cierra con este resultado.
+Sí hubo un efecto no anticipado en un caso que no estaba en esa lista de
+vigilancia: **AG-07 pasó de 2 a 5 invocaciones**, consultando tres veces
+seguidas la base de conocimiento, con la latencia subiendo de 12662 a
+21315 ms. La causa no es el prompt sino una laguna documental —ninguno de
+los siete documentos de la knowledge base cubre entrenamiento en calor— y
+el criterio de subconjunto de la métrica no lo penaliza. Se analiza en
+`docs/evaluation/agent-evaluation.md`, sección 5.2.
+
+**Resultado final: tasa de acierto de invocación de herramientas 100%
+(10/10 casos)**, sin necesitar el reintento del hallazgo C en ningún caso
+de esta corrida. El issue #15 se cierra con este resultado.
+
+Es un indicador acotado: mide si el agente invocó al menos las
+herramientas esperadas, no si invocó de más ni la fidelidad del contenido
+de la respuesta. El análisis cualitativo y las limitaciones de la métrica
+están en `docs/evaluation/agent-evaluation.md`.
 
 | Métrica | v1 | v3 | v4 | v5 |
 |---|---|---|---|---|
-| Tasa de acierto | 70.0% | 90.0% | 90.0% | **100.0%** |
+| Tasa de acierto de herramientas | 70.0% | 90.0% | 90.0% | **100.0%** |
 | Latencia promedio | 8714 ms | 8544 ms | 7516 ms | 7466 ms |
 | Casos completados | 10/10 | 10/10 | 10/10 | 10/10 |
 | Límite de iteraciones alcanzado | 0 | 0 | 0 | 0 |

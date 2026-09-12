@@ -1,0 +1,42 @@
+name: Tests
+
+# Se dispara ante cada PR hacia main. El repositorio protege main con
+# revision obligatoria, asi que este es el punto donde la profesora ve
+# los Checks antes de aprobar.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [develop]
+
+jobs:
+  test:
+    name: Suite de pruebas unitarias
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      # 3.11 y no 3.12: es la version del entorno de desarrollo del equipo.
+      # Un CI que prueba una version distinta a la que se corre localmente
+      # es una fuente de discrepancias gratuita.
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # No se configura ningun secret de GCP a proposito. Las 59 pruebas
+      # usan mocks y no tocan Vertex AI, Firestore ni ChromaDB: es una
+      # consecuencia directa del cliente perezoso de Firestore (#10) y de
+      # que vertexai.init() no autentica al importar. Si este paso empieza
+      # a requerir credenciales, es senal de que una prueba dejo de estar
+      # aislada.
+      - name: Ejecutar suite de pruebas
+        run: python -m unittest discover -s tests -p "test_*.py" -v
