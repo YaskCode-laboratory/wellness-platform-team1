@@ -10,6 +10,7 @@ def recuperar(
     consulta: str,
     k: int = TOP_K,
     categoria: str | None = None,
+    categorias: list[str] | None = None,
     nivel_evidencia: str | None = None,
 ) -> list[dict]:
     """Recupera los k chunks más relevantes para una consulta.
@@ -17,12 +18,27 @@ def recuperar(
     Args:
         consulta: pregunta o contexto en lenguaje natural
         k: número de chunks a recuperar
-        categoria: filtra por categoría de la taxonomía (opcional)
+        categoria: filtra por una categoría de la taxonomía (opcional)
+        categorias: filtra por varias categorías a la vez (opcional)
         nivel_evidencia: filtra por nivel de evidencia (opcional)
+
+    El filtro por varias categorías se agrega en el Sprint 3 (issue S3-03)
+    para sostener la frontera de responsabilidad entre agentes. El Wellness
+    Coach accede a seis de las siete categorías de la taxonomía y el Nutrition
+    Agent a la restante, de modo que ninguno puede recuperar documentos del
+    dominio del otro. Esa frontera vive aquí y no solo en el prompt: los
+    hallazgos E y F del Sprint 2 mostraron que una instrucción de texto
+    describe el comportamiento deseado pero no lo garantiza.
 
     Returns:
         Lista de chunks ordenados por similitud descendente.
     """
+    if categoria and categorias:
+        raise ValueError(
+            "Usa 'categoria' para una sola categoría o 'categorias' para varias, "
+            "no ambas: combinarlas haría ambiguo el filtro resultante."
+        )
+
     # La consulta se embebe con RETRIEVAL_QUERY, distinto de los documentos
     vector = embed_query(consulta)
 
@@ -31,6 +47,8 @@ def recuperar(
     condiciones = []
     if categoria:
         condiciones.append({"categoria": categoria})
+    if categorias:
+        condiciones.append({"categoria": {"$in": list(categorias)}})
     if nivel_evidencia:
         condiciones.append({"nivel_evidencia": nivel_evidencia})
 
@@ -80,4 +98,23 @@ if __name__ == "__main__":
     print("MISMA CONSULTA, FILTRADA POR CATEGORÍA = nutricion")
     print("=" * 78)
     resultados = recuperar("cuánto debo consumir al entrenar", k=3, categoria="nutricion")
+    print(formatear_resultados(resultados))
+
+    # Demostración de la frontera entre agentes (S3-03): la misma consulta
+    # restringida a las categorías del Wellness Coach no devuelve nutrición.
+    print("\n\n" + "=" * 78)
+    print("MISMA CONSULTA, RESTRINGIDA A LAS CATEGORÍAS DEL WELLNESS COACH")
+    print("=" * 78)
+    resultados = recuperar(
+        "cuánto debo consumir al entrenar",
+        k=3,
+        categorias=[
+            "carga_entrenamiento",
+            "zonas_fisiologicas",
+            "distribucion_intensidad",
+            "prevencion_lesiones",
+            "tapering",
+            "recuperacion",
+        ],
+    )
     print(formatear_resultados(resultados))
