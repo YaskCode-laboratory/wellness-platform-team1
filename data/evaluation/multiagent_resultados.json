@@ -1,0 +1,711 @@
+{
+  "resultados": [
+    {
+      "id": "MA-01",
+      "tipo": "sin_delegacion",
+      "mensaje": "Hola, buenos dias",
+      "criterio_aprobacion": "Responde al saludo y pregunta en que puede ayudar. No redirige como si fuera un tema ajeno a la plataforma, y no invoca a ningun agente.",
+      "intencion_esperada": "no_reconocida",
+      "intencion_obtenida": "no_reconocida",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje es un saludo sin una pregunta o tema específico, lo que impide su clasificación en un dominio.",
+      "confianza": 0.9,
+      "agentes_esperados": [],
+      "agentes_invocados": [],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": "intencion_no_reconocida",
+      "colaboracion": false,
+      "respuesta": "No terminé de entender qué necesitas. ¿Podrías contarme un poco más? Puedo ayudarte con tu entrenamiento, tu progreso o cualquier duda sobre cómo estás corriendo.",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [],
+      "pasos": [],
+      "traza_id": "c40be4c0-bff2-4dc3-937d-8d5bc436d97b",
+      "latencias": {
+        "clasificacionMs": 4050,
+        "agentesMs": 0,
+        "totalMs": 4050
+      },
+      "latencia_medida_ms": 4205
+    },
+    {
+      "id": "MA-02",
+      "tipo": "sin_delegacion",
+      "mensaje": "Que pelicula me recomiendas ver este fin de semana?",
+      "criterio_aprobacion": "Redirige amablemente al dominio de la plataforma sin intentar responder la pregunta ni parcialmente.",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje solicita una recomendación de película, lo cual está fuera del dominio de entrenamiento o nutrición para corredores.",
+      "confianza": 1.0,
+      "agentes_esperados": [],
+      "agentes_invocados": [],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": "fuera_de_dominio",
+      "colaboracion": false,
+      "respuesta": "Soy el asistente de entrenamiento de RunCoach, así que me limito a temas de running, salud deportiva y bienestar del corredor. Si tienes alguna pregunta sobre tu entrenamiento, con gusto te ayudo.",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [],
+      "pasos": [],
+      "traza_id": "f84e0759-33aa-48b4-ab52-a9741f97dfde",
+      "latencias": {
+        "clasificacionMs": 2104,
+        "agentesMs": 0,
+        "totalMs": 2104
+      },
+      "latencia_medida_ms": 2280
+    },
+    {
+      "id": "MA-03",
+      "tipo": "entrenamiento",
+      "mensaje": "Como voy esta semana respecto a mi meta?",
+      "criterio_aprobacion": "Consulta el progreso real del corredor y contrasta la carga actual con la meta. No pregunta al corredor un dato que la plataforma ya tiene.",
+      "intencion_esperada": "entrenamiento",
+      "intencion_obtenida": "entrenamiento",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El corredor pregunta sobre su progreso semanal respecto a sus objetivos, lo cual es una consulta directa sobre el seguimiento y la progresión del entrenamiento.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "¡Hola! Veo que esta semana llevas 14 km recorridos, lo que significa que has completado el 56% de tu meta semanal de 25 km. ¡Vas muy bien! La semana pasada hiciste 5 km, así que hay una buena progresión.",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_progreso_objetivo"
+      ],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Como voy esta semana respecto a mi meta?",
+          "herramientasInvocadas": [
+            "consultar_progreso_objetivo"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 5948,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "10bff4b0-de50-438a-813b-4862680a1047",
+      "latencias": {
+        "clasificacionMs": 3788,
+        "agentesMs": 5948,
+        "totalMs": 9737
+      },
+      "latencia_medida_ms": 9916
+    },
+    {
+      "id": "MA-04",
+      "tipo": "entrenamiento",
+      "mensaje": "Puedo hacer un entrenamiento fuerte hoy dado el clima?",
+      "criterio_aprobacion": "Consulta el clima de la ciudad del corredor y lo incorpora a la recomendacion. Si el servicio no responde, lo declara en vez de suponer un clima.",
+      "intencion_esperada": "entrenamiento",
+      "intencion_obtenida": "entrenamiento",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El corredor pregunta si puede realizar un entrenamiento fuerte hoy, considerando las condiciones climáticas, lo cual es una consulta directa sobre entrenamiento y clima.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "¡Hola! Veo que estás pensando en tu entrenamiento de hoy.\n\nEl clima en Maracaibo actualmente es de 28.9°C, sin lluvia y con un viento moderado de 11.5 km/h.\n\nCon una temperatura tan alta, hacer un entrenamiento fuerte hoy podría ser bastante exigente y aumentar el riesgo de golpe de calor o deshidratación. Mi recomendación es que seas prudente:\n\n*   **Considera bajar la intensidad** o la duración si decides entrenar.\n*   **Busca las horas más frescas** del día si es posible, como a primera hora de la mañana o al atardecer.\n*   **Hidrátate muy bien** antes, durante y después del entrenamiento.\n*   **Escucha a tu cuerpo** y no dudes en detenerte si sientes cualquier síntoma de malestar.\n\nSi necesitas más detalles sobre cómo ajustar tu entrenamiento en estas condiciones, ¡dime!",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_clima"
+      ],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Puedo hacer un entrenamiento fuerte hoy dado el clima?",
+          "herramientasInvocadas": [
+            "consultar_clima"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 7564,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "2a6d1acf-67dc-4af4-89f0-444b077c0941",
+      "latencias": {
+        "clasificacionMs": 2519,
+        "agentesMs": 7564,
+        "totalMs": 10083
+      },
+      "latencia_medida_ms": 10270
+    },
+    {
+      "id": "MA-05",
+      "tipo": "entrenamiento",
+      "mensaje": "Que significa cuando dicen zona 2 en running?",
+      "criterio_aprobacion": "Responde fundamentado en la base de conocimiento y menciona que la informacion proviene de ella. No responde desde conocimiento general.",
+      "intencion_esperada": "entrenamiento",
+      "intencion_obtenida": "entrenamiento",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "La pregunta se refiere a las zonas de intensidad en running, que es un tema cubierto por el dominio de entrenamiento.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "La Zona 2 en running se refiere a una intensidad de ejercicio que se considera de \"Base Aeróbica\". Es una parte fundamental del entrenamiento y te explico por qué:\n\n*   **¿Qué es?** Es una zona de intensidad moderada, donde tu cuerpo principalmente utiliza las grasas como fuente de energía. Se sitúa por debajo del primer umbral de lactato (LT1).\n*   **¿Cómo se siente?** Generalmente, puedes mantener una conversación sin dificultad mientras corres en esta zona. Tu Percepción del Esfuerzo (RPE por sus siglas en inglés) estaría entre 3 y 4 en una escala del 1 al 10.\n*   **¿Qué beneficios aporta?** ¡Muchísimos! Al entrenar en Zona 2, tu cuerpo mejora su capacidad para:\n    *   **Desarrollar fibras musculares de contracción lenta:** Estas son las que te dan resistencia.\n    *   **Incrementar la densidad mitocondrial:** Las mitocondrias son las \"centrales de energía\" de tus células, y tener más significa más eficiencia.\n    *   **Aumentar la capilarización:** Mejora el flujo sanguíneo a tus músculos.\n    *   **Oxidación de grasas:** Tu cuerpo se vuelve más eficiente usando grasas como combustible, lo que te permite correr por más tiempo sin fatigarte.\n*   **¿Cómo se mide?** Normalmente, se calcula usando un porcentaje de tu frecuencia cardíaca máxima (FC máx), que suele estar entre el 60% y el 75%. También puede definirse en relación a tu frecuencia cardíaca de umbral de lactato. Es importante saber que hay diferentes metodologías para definirla, por lo que los rangos pueden variar ligeramente.\n\nEn resumen, la Zona 2 es crucial para construir una base aeróbica sólida, lo que te permitirá correr más lejos, más rápido y con menos fatiga a largo plazo.\n\n¿Te gustaría que profundicemos en cómo puedes calcular tu Zona 2 o cómo incorporarla en tus entrenamientos?",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_base_conocimiento"
+      ],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Que significa cuando dicen zona 2 en running?",
+          "herramientasInvocadas": [
+            "consultar_base_conocimiento"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 8433,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "8f5c4310-3f02-450e-b2f5-6262581ed6f0",
+      "latencias": {
+        "clasificacionMs": 1950,
+        "agentesMs": 8433,
+        "totalMs": 10383
+      },
+      "latencia_medida_ms": 10698
+    },
+    {
+      "id": "MA-06",
+      "tipo": "nutricion",
+      "mensaje": "Cuanta agua debo tomar mientras corro?",
+      "criterio_aprobacion": "Responde con pautas de hidratacion fundamentadas en KB-006 y cita la fuente. No da recomendaciones de entrenamiento.",
+      "intencion_esperada": "nutricion",
+      "intencion_obtenida": "nutricion",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje pregunta sobre la cantidad de agua a consumir durante la carrera, lo cual es un tema de hidratación cubierto por el agente de nutrición.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "agentes_invocados": [
+        "nutrition"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "¡Hola! La recomendación actual para la hidratación mientras corres es beber según tu sed, en lugar de seguir pautas fijas de volumen. Es importante evitar la sobrehidratación con agua sin electrolitos, ya que podría ser perjudicial. Si te interesa, pesarte antes y después de sesiones largas puede ayudarte a estimar tu tasa de sudoración individual.",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [
+        "KB-006"
+      ],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "nutrition",
+          "mensajeDelegado": "Cuanta agua debo tomar mientras corro?",
+          "herramientasInvocadas": [],
+          "fuentes": [
+            "KB-006"
+          ],
+          "degradado": false,
+          "latenciaMs": 4091,
+          "detalle": {
+            "fuentes_inventadas": [],
+            "fragmentos_recuperados": [
+              "KB-006",
+              "KB-006",
+              "KB-006"
+            ],
+            "cubierto": true
+          }
+        }
+      ],
+      "traza_id": "0e4ef093-bff8-44c0-a213-3717e195746e",
+      "latencias": {
+        "clasificacionMs": 2684,
+        "agentesMs": 4091,
+        "totalMs": 6775
+      },
+      "latencia_medida_ms": 6937
+    },
+    {
+      "id": "MA-07",
+      "tipo": "nutricion",
+      "mensaje": "Cuantos carbohidratos debo consumir durante una carrera larga?",
+      "criterio_aprobacion": "Da la pauta de carbohidratos por hora fundamentada en KB-006. Si la pauta esta expresada por kilogramo, usa el peso del corredor.",
+      "intencion_esperada": "nutricion",
+      "intencion_obtenida": "nutricion",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje pregunta sobre la ingesta de carbohidratos durante una carrera larga, lo cual es un tema de nutrición.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "agentes_invocados": [
+        "nutrition"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "¡Hola! Para tus carreras largas, la cantidad de carbohidratos que necesitas durante el esfuerzo depende de la duración. Si tu carrera dura entre 1 y 2.5 horas, te recomendamos consumir entre 30 y 60 gramos de carbohidratos por hora. Para esfuerzos que superen las 2.5 horas, puedes aumentar la ingesta hasta 90 gramos por hora, utilizando hidratos de carbono de transporte múltiple.\n\nEs muy importante que pruebes estas estrategias de nutrición durante tus entrenamientos para que tu sistema digestivo se adapte y encuentres lo que mejor te funciona, ¡nunca el día de la competición!",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [
+        "KB-006"
+      ],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "nutrition",
+          "mensajeDelegado": "Cuantos carbohidratos debo consumir durante una carrera larga?",
+          "herramientasInvocadas": [],
+          "fuentes": [
+            "KB-006"
+          ],
+          "degradado": false,
+          "latenciaMs": 6652,
+          "detalle": {
+            "fuentes_inventadas": [],
+            "fragmentos_recuperados": [
+              "KB-006",
+              "KB-006",
+              "KB-006"
+            ],
+            "cubierto": true
+          }
+        }
+      ],
+      "traza_id": "390a69c9-6f7c-4aa3-ae92-95e87c89ef44",
+      "latencias": {
+        "clasificacionMs": 2109,
+        "agentesMs": 6652,
+        "totalMs": 8761
+      },
+      "latencia_medida_ms": 8910
+    },
+    {
+      "id": "MA-08",
+      "tipo": "colaboracion",
+      "mensaje": "Que como antes de una tirada larga y como ajusto el entrenamiento esta semana?",
+      "criterio_aprobacion": "Intervienen los dos agentes. Cada uno recibe solo su parte de la consulta, y la sub-consulta de entrenamiento conserva que hay una tirada larga prevista. Ningun bloque deriva al otro especialista, porque ambos estan respondiendo.",
+      "intencion_esperada": "mixta",
+      "intencion_obtenida": "mixta",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje combina preguntas sobre nutrición pre-entrenamiento y ajuste de la planificación semanal de entrenamiento.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": true,
+      "respuesta": "Tu consulta toca más de un área, así que te respondo por partes.\n\n**Sobre tu alimentacion**\n¡Hola! Entiendo tu interés en saber qué comer antes de una tirada larga. Sin embargo, con la información que tengo en este momento, no puedo darte pautas específicas sobre la nutrición previa al esfuerzo. Los fragmentos de conocimiento disponibles se centran en la hidratación y la ingesta de carbohidratos durante el esfuerzo, así como en la recuperación posterior. Para la planificación de tus comidas antes de entrenar, te recomiendo consultar a un profesional de la nutrición que pueda darte una guía personalizada.\n\n**Sobre tu entrenamiento**\nGracias por compartir tu historial reciente. Veo que hoy mismo hiciste un rodaje de 6km, y hace un par de días un tempo de 8km. ¡Buen trabajo!\n\nAhora, pensando en tu tirada larga, la clave para un corredor intermedio como tú es manejar la carga para llegar fresco y, sobre todo, recuperarte bien después. No queremos acumular fatiga innecesaria que pueda llevar a un rendimiento bajo o, peor aún, a una lesión.\n\nAquí te doy algunas pautas para ajustar tu semana:\n\n1.  **Reducción de la carga previa:** Lo ideal es que los 2-3 días antes de la tirada larga sean de menor volumen e intensidad. Si hoy ya hiciste 6km, podrías considerar que los próximos días sean de rodajes muy suaves y cortos, o incluso un día de descanso total el día antes. Esto permite que tus músculos se recuperen y almacenen glucógeno para el esfuerzo principal.\n2.  **Ritmo de la tirada larga:** Aunque es un entrenamiento clave, no es una carrera. Mantén un ritmo cómodo y conversacional. No se trata de ir rápido, sino de acumular tiempo en tus pies y acostumbrar a tu cuerpo a la distancia.\n3.  **Post-tirada larga:** La recuperación es tan importante como la tirada en sí. Los días posteriores deberían ser de recuperación activa (caminatas suaves, estiramientos) o descanso total. Evita cualquier entrenamiento de alta intensidad o volumen significativo hasta que te sientas completamente recuperado. Tu cuerpo habrá hecho un gran esfuerzo y necesita reconstruirse.\n4.  **Escucha a tu cuerpo:** Esto es fundamental. Si te sientes excesivamente cansado o con alguna molestia, no dudes en ajustar aún más tu plan. Un día extra de descanso es siempre mejor que forzar y acabar con una lesión.\n\n¿Cuándo tienes planeada esa tirada larga? Sabiendo el día exacto, podría darte una recomendación más precisa para los días previos.",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_historial_sesiones"
+      ],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "nutrition",
+          "mensajeDelegado": "Qué debo comer antes de una tirada larga?",
+          "herramientasInvocadas": [],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 3313,
+          "detalle": {
+            "fuentes_inventadas": [],
+            "fragmentos_recuperados": [
+              "KB-006",
+              "KB-006",
+              "KB-006"
+            ],
+            "cubierto": false
+          }
+        },
+        {
+          "paso": 2,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Cómo debo ajustar mi entrenamiento esta semana, considerando que tengo una tirada larga?",
+          "herramientasInvocadas": [
+            "consultar_historial_sesiones"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 9437,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "984272a8-2317-48c0-b3d4-607e6c82032f",
+      "latencias": {
+        "clasificacionMs": 4720,
+        "agentesMs": 12750,
+        "totalMs": 17470
+      },
+      "latencia_medida_ms": 17623
+    },
+    {
+      "id": "MA-09",
+      "tipo": "colaboracion",
+      "mensaje": "Me siento sin energia en los ultimos kilometros de mis tiradas largas, que hago?",
+      "criterio_aprobacion": "Caso dificil: el mensaje no menciona comida, pero la falta de energia al final de una tirada larga depende del dominio nutricional tanto como del de entrenamiento. Verifica si el clasificador razona por dominio de conocimiento y no por palabras presentes en el texto.",
+      "intencion_esperada": "mixta",
+      "intencion_obtenida": "mixta",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El corredor experimenta falta de energía en tiradas largas, lo cual puede deberse a factores nutricionales (reposición de energía) y de entrenamiento (adaptación a la distancia).",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": true,
+      "respuesta": "Tu consulta toca más de un área, así que te respondo por partes.\n\n**Sobre tu alimentacion**\n¡Hola! Para evitar esa sensación de falta de energía en los últimos kilómetros de tus tiradas largas, la clave está en asegurar un buen aporte de hidratos de carbono durante el esfuerzo. Si tus tiradas duran entre 1 y 2.5 horas, se recomienda ingerir entre 30 y 60 gramos de hidratos de carbono por hora. Para esfuerzos más prolongados, de más de 2.5 horas, puedes aumentar este aporte hasta 90 gramos por hora, combinando diferentes tipos de hidratos (como glucosa y fructosa) para facilitar su absorción. Es fundamental que pruebes y entrenes tu tolerancia gastrointestinal a estos aportes durante tus sesiones de entrenamiento, nunca el día de la competición. Además, recuerda mantener una buena hidratación, bebiendo según tu sed, ya que una deshidratación superior al 2% de tu peso corporal puede afectar tu rendimiento. ¡A seguir sumando kilómetros con energía!\n\n**Sobre tu entrenamiento**\nGracias por la información de la base de conocimiento. Confirma y complementa lo que te comentaba. Es fundamental que la progresión de tu carga sea gradual, especialmente en esas tiradas largas. No se trata solo de los kilómetros de hoy, sino de construir una \"carga crónica\" a lo largo del tiempo que tu cuerpo pueda asimilar, ¡y recuperarse de ella!\n\nDe hecho, la base de conocimiento subraya la importancia de la **progresión gradual de la carga**, no solo para evitar lesiones (que es crucial), sino también para construir esa resistencia de fondo que buscas. Esto significa aumentar la distancia y la intensidad de forma sensata, permitiendo que tu cuerpo se adapte.\n\nTambién, como mencionaba, la **recuperación adecuada** es vital. La información sugiere que la ausencia programada de carga, incluso con semanas de descarga cada cierto tiempo, es tan importante como el entrenamiento mismo. Es durante esos periodos de descanso cuando tu cuerpo realmente se fortalece y asimila las adaptaciones del entrenamiento, preparándote para la siguiente exigencia. ¡El sueño es una pieza central en esto!\n\nEntonces, para resumir y complementando lo que ya hablamos:\n\n*   **Progresión Gradual:** Aumenta la distancia de tus tiradas largas y tu volumen semanal poco a poco. Piensa en construir una base sólida a largo plazo, no en incrementos bruscos.\n*   **Ritmo Inteligente:** Corre tus tiradas largas a un ritmo cómodo y conversacional. Esto entrena a tu cuerpo a ser más eficiente con la energía.\n*   **Recuperación Activa:** Programa días de descanso o de entrenamiento muy ligero. Las semanas de descarga cada 3-4 semanas pueden ser muy beneficiosas para que tu cuerpo se recupere completamente y evites la fatiga acumulada que podría llevar a ese \"bajón\".\n\nCon esta información y lo que te compartió el especialista en nutrición, ¡tienes una estrategia muy completa!\n\nAhora, para poder darte un consejo aún más ajustado a tu situación: ¿podrías contarme un poco sobre cómo sueles estructurar tus tiradas largas actualmente? Por ejemplo, ¿qué distancia suelen tener, a qué ritmo las corres y con qué frecuencia las realizas? Con esa información, puedo ayudarte a afinar esos detalles.",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_base_conocimiento"
+      ],
+      "fuentes": [
+        "KB-006"
+      ],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "nutrition",
+          "mensajeDelegado": "Qué pautas nutricionales debo seguir para evitar la falta de energía en los últimos kilómetros de mis tiradas largas?",
+          "herramientasInvocadas": [],
+          "fuentes": [
+            "KB-006"
+          ],
+          "degradado": false,
+          "latenciaMs": 8386,
+          "detalle": {
+            "fuentes_inventadas": [],
+            "fragmentos_recuperados": [
+              "KB-006",
+              "KB-006",
+              "KB-006"
+            ],
+            "cubierto": true
+          }
+        },
+        {
+          "paso": 2,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Cómo puedo ajustar mi entrenamiento para mejorar mi resistencia y evitar la falta de energía en los últimos kilómetros de mis tiradas largas?",
+          "herramientasInvocadas": [
+            "consultar_base_conocimiento"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 12908,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "fe6e549a-62a1-4cb2-a305-221e027a577e",
+      "latencias": {
+        "clasificacionMs": 4721,
+        "agentesMs": 21294,
+        "totalMs": 26015
+      },
+      "latencia_medida_ms": 26218
+    },
+    {
+      "id": "MA-10",
+      "tipo": "frontera",
+      "mensaje": "Cuanto debo bajar el volumen las semanas antes de mi carrera?",
+      "criterio_aprobacion": "Es una pregunta de tapering, no de nutricion, aunque una preparacion para competir tenga componente nutricional. Verifica que el clasificador no marque como mixta algo cuyo segundo dominio es apenas tangencial: una delegacion doble innecesaria duplica la latencia sin ser mas util.",
+      "intencion_esperada": "entrenamiento",
+      "intencion_obtenida": "entrenamiento",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El corredor pregunta sobre la reducción del volumen de entrenamiento antes de una carrera, lo cual es un tema de 'tapering' dentro del dominio de entrenamiento.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "agentes_invocados": [
+        "wellness_coach"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "¡Excelente! La información de nuestra base de conocimientos, basada en meta-análisis sobre el tapering, nos dice lo siguiente:\n\nLo ideal es reducir el **volumen** de tu entrenamiento entre un **41% y un 60%** en las semanas previas a la carrera. Es importante que esta reducción sea progresiva, no de golpe, y que se realice durante aproximadamente **dos semanas** (entre 8 y 14 días).\n\nUn punto crucial es que, mientras bajas el volumen, debes **mantener la intensidad y la frecuencia** de tus entrenamientos. Es decir, sigue haciendo las sesiones que hacías, pero que sean más cortas. Reducir la intensidad o la frecuencia son errores comunes que pueden afectar negativamente tu rendimiento. El objetivo es llegar fresco y con las adaptaciones musculares y cardiovasculares intactas.\n\n¿Tienes ya una fecha para tu carrera? Con eso podríamos estimar mejor cómo aplicar esta reducción.",
+      "degradado": false,
+      "herramientas_invocadas": [
+        "consultar_base_conocimiento"
+      ],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "wellness_coach",
+          "mensajeDelegado": "Cuanto debo bajar el volumen las semanas antes de mi carrera?",
+          "herramientasInvocadas": [
+            "consultar_base_conocimiento"
+          ],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 7207,
+          "detalle": {
+            "herramientas_degradadas": [],
+            "limite_alcanzado": false,
+            "reintento_utilizado": false,
+            "reintento_fallido": false
+          }
+        }
+      ],
+      "traza_id": "77759a81-1b85-4a55-8c62-b8392977c57f",
+      "latencias": {
+        "clasificacionMs": 1840,
+        "agentesMs": 7207,
+        "totalMs": 9048
+      },
+      "latencia_medida_ms": 9280
+    },
+    {
+      "id": "MA-11",
+      "tipo": "laguna_documental",
+      "mensaje": "Que debo desayunar antes de entrenar en la manana?",
+      "criterio_aprobacion": "KB-006 no cubre la alimentacion previa al ejercicio. El agente debe declarar el vacio explicitamente y no citar ninguna fuente, en vez de rellenarlo con conocimiento general. Una respuesta que reconoce un vacio es correcta; una que lo rellena destruye la trazabilidad del sistema.",
+      "intencion_esperada": "nutricion",
+      "intencion_obtenida": "nutricion",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje pregunta sobre qué desayunar antes de entrenar, lo cual es una consulta directa sobre alimentación del corredor.",
+      "confianza": 0.95,
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "agentes_invocados": [
+        "nutrition"
+      ],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": null,
+      "colaboracion": false,
+      "respuesta": "Entiendo tu pregunta sobre qué desayunar antes de entrenar por la mañana. Sin embargo, los fragmentos de información que tengo a mi disposición no contienen pautas específicas sobre la alimentación previa al entrenamiento matutino. Se centran en la nutrición durante el esfuerzo, la recuperación posterior y el marco general de la nutrición para corredores de resistencia.",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [],
+      "pasos": [
+        {
+          "paso": 1,
+          "agente": "nutrition",
+          "mensajeDelegado": "Que debo desayunar antes de entrenar en la manana?",
+          "herramientasInvocadas": [],
+          "fuentes": [],
+          "degradado": false,
+          "latenciaMs": 2514,
+          "detalle": {
+            "fuentes_inventadas": [],
+            "fragmentos_recuperados": [
+              "KB-006",
+              "KB-006",
+              "KB-006"
+            ],
+            "cubierto": false
+          }
+        }
+      ],
+      "traza_id": "547d2902-1ee3-49cc-8a97-b817f18cffe8",
+      "latencias": {
+        "clasificacionMs": 2173,
+        "agentesMs": 2514,
+        "totalMs": 4687
+      },
+      "latencia_medida_ms": 4853
+    },
+    {
+      "id": "MA-12",
+      "tipo": "sin_delegacion",
+      "mensaje": "y eso",
+      "criterio_aprobacion": "Mensaje incompleto e incoherente. Pide aclaracion sin delegar y sin adivinar a que se referia.",
+      "intencion_esperada": "no_reconocida",
+      "intencion_obtenida": "no_reconocida",
+      "intencion_coincide": true,
+      "motivo_clasificacion": "El mensaje es demasiado ambiguo e incompleto para determinar una intención clara.",
+      "confianza": 0.95,
+      "agentes_esperados": [],
+      "agentes_invocados": [],
+      "delegacion": {
+        "exacta": true,
+        "sobredelegacion": [],
+        "subdelegacion": [],
+        "orden_esperado": true
+      },
+      "motivo_no_delegacion": "intencion_no_reconocida",
+      "colaboracion": false,
+      "respuesta": "No terminé de entender qué necesitas. ¿Podrías contarme un poco más? Puedo ayudarte con tu entrenamiento, tu progreso o cualquier duda sobre cómo estás corriendo.",
+      "degradado": false,
+      "herramientas_invocadas": [],
+      "fuentes": [],
+      "pasos": [],
+      "traza_id": "bab52afc-329c-4a08-8f35-278445abc65f",
+      "latencias": {
+        "clasificacionMs": 2413,
+        "agentesMs": 0,
+        "totalMs": 2413
+      },
+      "latencia_medida_ms": 2622
+    }
+  ],
+  "metricas": {
+    "total_casos": 12,
+    "tasa_delegacion_exacta": 1.0,
+    "tasa_intencion_correcta": 1.0,
+    "casos_con_sobredelegacion": [],
+    "casos_con_subdelegacion": [],
+    "casos_con_orden_incorrecto": [],
+    "casos_degradados": [],
+    "casos_con_colaboracion": [
+      "MA-08",
+      "MA-09"
+    ],
+    "latencia_total_promedio_ms": 9294,
+    "latencia_clasificacion_promedio_ms": 2923,
+    "valores_de_confianza_observados": [
+      0.9,
+      0.95,
+      1.0
+    ],
+    "por_tipo": {
+      "sin_delegacion": {
+        "total": 3,
+        "aciertos": 3
+      },
+      "entrenamiento": {
+        "total": 3,
+        "aciertos": 3
+      },
+      "nutricion": {
+        "total": 2,
+        "aciertos": 2
+      },
+      "colaboracion": {
+        "total": 2,
+        "aciertos": 2
+      },
+      "frontera": {
+        "total": 1,
+        "aciertos": 1
+      },
+      "laguna_documental": {
+        "total": 1,
+        "aciertos": 1
+      }
+    }
+  }
+}
