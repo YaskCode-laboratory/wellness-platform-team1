@@ -1,6 +1,6 @@
 """Pruebas del Orchestrator Agent (issue S3-02).
 
-Se separan en tres clases segun que se esta probando:
+Se separan en cuatro clases segun que se esta probando:
 
 - TestDecisionDeDelegacion cubre _decidir(), que es logica pura: no toca red
   ni modelo, asi que se prueba sin mockear nada mas que la clasificacion de
@@ -9,11 +9,14 @@ Se separan en tres clases segun que se esta probando:
   el registro mockeados.
 - TestClasificador cubre la degradacion del clasificador ante respuestas
   malformadas del modelo.
+- TestRegistroDeAgentes cubre que el catalogo que ve el clasificador y las
+  intenciones que puede devolver se deriven del registro.
 """
 
 import unittest
 from unittest.mock import MagicMock, patch
 
+from src.orchestration.orchestrator import registro_agentes
 from src.orchestration.orchestrator.agent import (
     RESPUESTA_AGENTE_FALLO,
     RESPUESTA_DOMINIO_SIN_AGENTE,
@@ -96,16 +99,46 @@ class TestDecisionDeDelegacion(unittest.TestCase):
             decision["motivo_no_delegacion"], "delegacion_multiple_no_implementada"
         )
 
-    def test_dominio_de_la_plataforma_sin_agente_no_es_fuera_de_dominio(self):
-        """Distincion que justifica _DOMINIOS_SIN_AGENTE: una pregunta de
-        nutricion pertenece a la plataforma aunque no tenga agente. Tratarla
-        como tema ajeno le diria al corredor algo falso."""
-        decision = self.orq._decidir(clasificacion("nutricion"))
+    @patch("src.orchestration.orchestrator.agent.es_dominio_sin_agente")
+    @patch("src.orchestration.orchestrator.agent.resolver")
+    def test_un_dominio_previsto_sin_agente_no_es_fuera_de_dominio(
+        self, mock_resolver, mock_es_dominio
+    ):
+        """Distincion que justifica _DOMINIOS_SIN_AGENTE: un dominio que la
+        plataforma cubre pero que aun no tiene agente no debe tratarse como
+        tema ajeno, porque eso le diria al corredor algo falso.
+
+        Se prueba el MECANISMO con un dominio simulado, no con una intencion
+        concreta. En S3-02 el caso real era 'nutricion'; al registrarse el
+        Nutrition Agent en S3-03 esa intencion paso a tener agente. La regla
+        que esta prueba protege sigue vigente y debe sobrevivir a que los
+        dominios se gradualmente vayan poblando de agentes."""
+        mock_resolver.return_value = None
+        mock_es_dominio.return_value = True
+
+        decision = self.orq._decidir(clasificacion("motivacion"))
 
         self.assertIsNone(decision["agente"])
         self.assertEqual(decision["texto"], RESPUESTA_DOMINIO_SIN_AGENTE)
         self.assertEqual(decision["motivo_no_delegacion"], "dominio_sin_agente")
         self.assertNotEqual(decision["texto"], RESPUESTA_FUERA_DE_DOMINIO)
+
+    @patch("src.orchestration.orchestrator.agent.es_dominio_sin_agente")
+    @patch("src.orchestration.orchestrator.agent.resolver")
+    def test_intencion_valida_sin_destino_pide_aclaracion(
+        self, mock_resolver, mock_es_dominio
+    ):
+        """Situacion inalcanzable mientras el enum se genere desde el registro,
+        pero contemplada: si alguien agrega una intencion sin agente ni dominio
+        declarado, el sistema pide aclaracion en vez de romperse."""
+        mock_resolver.return_value = None
+        mock_es_dominio.return_value = False
+
+        with self.assertLogs("src.orchestration.orchestrator.agent", level="ERROR"):
+            decision = self.orq._decidir(clasificacion("intencion_huerfana"))
+
+        self.assertIsNone(decision["agente"])
+        self.assertEqual(decision["motivo_no_delegacion"], "intencion_sin_destino")
 
 
 class TestProcesarSolicitud(unittest.TestCase):
@@ -275,6 +308,38 @@ class TestClasificador(unittest.TestCase):
         resultado = clasificar("algo")
 
         self.assertEqual(resultado.confianza, 1.0)
+
+
+class TestRegistroDeAgentes(unittest.TestCase):
+    """El catalogo y las intenciones validas se derivan del registro.
+
+    En el Sprint 2, dos de los seis hallazgos fueron desajustes entre lo que
+    el prompt describia y lo que el codigo hacia. Estas pruebas cierran esa
+    puerta: si alguien registra un agente, el clasificador lo ve.
+    """
+
+    def test_los_dos_agentes_del_sprint_3_estan_registrados(self):
+        self.assertIn("entrenamiento", registro_agentes.intenciones_con_agente())
+        self.assertIn("nutricion", registro_agentes.intenciones_con_agente())
+
+    def test_las_intenciones_genericas_son_validas_aunque_no_tengan_agente(self):
+        validas = registro_agentes.intenciones_validas()
+        for generica in ("mixta", "fuera_de_dominio", "no_reconocida"):
+            self.assertIn(generica, validas)
+
+    def test_el_catalogo_describe_a_cada_agente_registrado(self):
+        catalogo = registro_agentes.catalogo_para_prompt()
+        self.assertIn("entrenamiento", catalogo)
+        self.assertIn("nutricion", catalogo)
+        self.assertIn("Wellness Coach Agent", catalogo)
+        self.assertIn("Nutrition Agent", catalogo)
+
+    def test_resolver_devuelve_el_agente_correcto(self):
+        self.assertEqual(registro_agentes.resolver("nutricion")["nombre"], "nutrition")
+        self.assertEqual(
+            registro_agentes.resolver("entrenamiento")["nombre"], "wellness_coach"
+        )
+        self.assertIsNone(registro_agentes.resolver("fuera_de_dominio"))
 
 
 if __name__ == "__main__":
