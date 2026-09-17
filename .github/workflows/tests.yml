@@ -1,11 +1,12 @@
 name: Tests
 
-# Se dispara ante cada PR hacia main. El repositorio protege main con
-# revision obligatoria, asi que este es el punto donde la profesora ve
-# los Checks antes de aprobar.
+# Se dispara ante cada PR hacia develop o main. Incluir develop es lo que hace
+# que cada PR del Sprint 3 muestre sus propios Checks: las ramas encadenadas
+# apuntan entre si y luego a develop, no a main, de modo que limitarlo a main
+# dejaria seis de los siete PRs sin verificacion visible.
 on:
   pull_request:
-    branches: [main]
+    branches: [develop, main]
   push:
     branches: [develop]
 
@@ -32,11 +33,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # No se configura ningun secret de GCP a proposito. Las 59 pruebas
-      # usan mocks y no tocan Vertex AI, Firestore ni ChromaDB: es una
-      # consecuencia directa del cliente perezoso de Firestore (#10) y de
-      # que vertexai.init() no autentica al importar. Si este paso empieza
-      # a requerir credenciales, es senal de que una prueba dejo de estar
+      # No se configura ningun secret de GCP a proposito. Las pruebas usan
+      # mocks y no tocan Vertex AI, Firestore ni ChromaDB: es una consecuencia
+      # directa del cliente perezoso de Firestore (#10) y de que
+      # vertexai.init() no autentica al importar. Si este paso empieza a
+      # requerir credenciales, es senal de que una prueba dejo de estar
       # aislada.
       - name: Ejecutar suite de pruebas
         run: python -m unittest discover -s tests -p "test_*.py" -v
