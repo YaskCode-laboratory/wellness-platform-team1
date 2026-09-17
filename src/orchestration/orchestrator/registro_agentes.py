@@ -12,32 +12,30 @@ abre conexiones reales (Firestore, Vertex AI), y el registro se importa desde
 las pruebas del orquestador, que no deben tocar la red -- misma leccion que el
 cliente perezoso de Firestore del issue #10.
 
+LOS ADAPTADORES (S3-04)
+
+Cada agente tiene un invocador que recibe una SolicitudAgente y devuelve una
+RespuestaAgente. Es el unico lugar del sistema que conoce la forma concreta en
+que habla cada agente: el Coach devuelve las claves camelCase que definio el
+Sprint 2, el Nutrition Agent devuelve las suyas, y el orquestador no ve
+ninguna de las dos.
+
+Esa traduccion es lo que sostiene el criterio de aceptacion de S3-02 sobre
+separar la coordinacion de los agentes. Sin ella, cambiar el contrato interno
+de un agente obligaria a tocar el orquestador.
+
 DOMINIOS PREVISTOS SIN AGENTE
 
 _DOMINIOS_SIN_AGENTE declara dominios que pertenecen a la plataforma pero que
-todavia no tienen un agente que los atienda, para que el clasificador pueda
-distinguir tres situaciones que no son lo mismo: un dominio propio sin agente,
-un tema ajeno a la plataforma, y un mensaje sin intencion clasificable. Sin esa
-distincion, una pregunta de un dominio previsto se clasificaria como fuera de
-dominio y el corredor recibiria una redireccion incorrecta.
-
-La lista esta vacia al cerrar S3-03: la nutricion, que era su unica entrada en
-S3-02, paso a _AGENTES al implementarse el Nutrition Agent. El mecanismo se
-conserva porque el roadmap de la plataforma contempla agentes de motivacion y
-analitica, y porque graduar un dominio de una lista a la otra es exactamente el
-camino previsto para incorporarlos.
-
-ESTADO EN S3-03
-
-Dos agentes registrados: el Wellness Coach (agente especializado asignado al
-equipo, construido en el Sprint 2) y el Nutrition Agent (segundo participante,
-necesario para que exista colaboracion que verificar). La delegacion sigue
-siendo a un solo agente por solicitud; la intencion mixta se reconoce pero su
-atencion corresponde a S3-04.
+todavia no tienen agente, para que el clasificador distinga un dominio propio
+sin atender de un tema ajeno a la plataforma. Esta vacia al cerrar S3-03: la
+nutricion, su unica entrada en S3-02, paso a _AGENTES. El mecanismo se conserva
+para los agentes de motivacion y analitica que contempla el roadmap.
 """
 
 from src.agents.nutrition.agent import NutritionAgent
 from src.agents.wellness_coach.agent import WellnessCoachAgent
+from src.orchestration.communication.contratos import RespuestaAgente, SolicitudAgente
 
 _instancias: dict[str, object] = {}
 
@@ -49,75 +47,69 @@ def _obtener_instancia(clave: str, constructor):
     return _instancias[clave]
 
 
-def _invocar_wellness_coach(user_id: str, mensaje: str) -> dict:
-    """Adaptador entre el contrato del orquestador y el del Wellness Coach.
+def _invocar_wellness_coach(solicitud: SolicitudAgente) -> RespuestaAgente:
+    """Adaptador del Wellness Coach.
 
-    El Coach devuelve las claves que definio el Sprint 2 (respuesta,
-    herramientasInvocadas, herramientasDegradadas...). El orquestador no
-    deberia conocer esa forma: cada agente puede tener la suya. Este
-    adaptador traduce, y es el unico lugar del sistema que sabe como habla
-    este agente en particular.
+    LIMITACION CONOCIDA: el Coach no expone sus fuentes de forma estructurada.
+    Cita los doc_id dentro de su prosa, gobernado por las reglas de citacion de
+    su prompt, pero su contrato de salida no las devuelve como lista. Por eso
+    'fuentes' queda vacia aqui, y no porque no haya citado nada.
 
-    Es lo que mantiene separada la logica de orquestacion de la logica de los
-    agentes, que es criterio de aceptacion de S3-02.
+    Extraerlas exigiria cambiar el contrato de salida del ciclo ReAct del
+    Sprint 2, que es trabajo de ese componente y no de este adaptador. Se anota
+    para S3-06, donde la trazabilidad de fuentes se va a medir.
     """
     agente = _obtener_instancia("wellness_coach", WellnessCoachAgent)
-    resultado = agente.conversar(user_id, mensaje)
+    resultado = agente.conversar(solicitud.user_id, solicitud.mensaje_con_contexto())
 
-    return {
-        "texto": resultado["respuesta"],
-        "herramientas_invocadas": [h["nombre"] for h in resultado["herramientasInvocadas"]],
-        "degradado": bool(resultado["herramientasDegradadas"]),
-        "detalle_agente": {
+    return RespuestaAgente(
+        agente="wellness_coach",
+        texto=resultado["respuesta"],
+        herramientas_invocadas=[h["nombre"] for h in resultado["herramientasInvocadas"]],
+        fuentes=[],
+        degradado=bool(resultado["herramientasDegradadas"]),
+        detalle={
             "herramientas_degradadas": resultado["herramientasDegradadas"],
             "limite_alcanzado": resultado["limiteAlcanzado"],
             "reintento_utilizado": resultado["reintentoUtilizado"],
             "reintento_fallido": resultado["reintentoFallido"],
         },
-    }
+    )
 
 
-def _invocar_nutrition(user_id: str, mensaje: str) -> dict:
-    """Adaptador entre el contrato del orquestador y el del Nutrition Agent.
+def _invocar_nutrition(solicitud: SolicitudAgente) -> RespuestaAgente:
+    """Adaptador del Nutrition Agent.
 
-    El Nutrition Agent no invoca herramientas: recupera y responde en una sola
-    llamada. 'herramientas_invocadas' queda vacia a proposito, y no es un dato
-    ausente sino una caracteristica de su diseno. La trazabilidad de lo que
-    consulto viaja en 'fragmentos_recuperados'.
+    'herramientas_invocadas' queda vacia por diseno: este agente recupera y
+    responde en una sola llamada, sin tool calling. Lo que consulto viaja en
+    'fuentes' y en el detalle.
 
     QUE CUENTA COMO DEGRADACION Y QUE NO
 
     Solo una cita inventada degrada. Desde la correccion S2-04, 'degradado'
-    significa en este sistema que una capacidad fallo: un servicio caido, una
-    consulta que no se pudo completar, una fuente que el agente afirma haber
-    usado y nunca recibio.
-
-    Que la base de conocimiento no cubra una pregunta NO es una degradacion.
-    Es el sistema funcionando como debe: el agente recupero lo que habia,
-    comprobo que no alcanzaba, y lo declaro en vez de rellenarlo con
-    conocimiento general no verificado. Contar eso como fallo haria que la
-    conducta correcta se registrara igual que un error, y contaminaria la
-    medicion de S3-06 -- exactamente el problema que agent-evaluation.md
-    documento sobre las metricas que mezclan situaciones distintas.
-
-    La cobertura viaja en 'cubierto', dentro del detalle, para que pueda
-    medirse por separado: es una senal sobre la knowledge base, no sobre el
-    agente.
+    significa que una capacidad fallo. Que la base de conocimiento no cubra una
+    pregunta NO es una degradacion: es el sistema funcionando: el agente
+    comprobo que no alcanzaba y lo declaro en vez de rellenarlo con
+    conocimiento no verificado. Contarlo como fallo registraria la conducta
+    correcta igual que un error y contaminaria la medicion de S3-06. La
+    cobertura viaja en el detalle, para medirse por separado: es una senal
+    sobre la knowledge base, no sobre el agente.
     """
     agente = _obtener_instancia("nutrition", NutritionAgent)
-    resultado = agente.responder(user_id, mensaje)
+    resultado = agente.responder(solicitud.user_id, solicitud.mensaje_con_contexto())
 
-    return {
-        "texto": resultado["respuesta"],
-        "herramientas_invocadas": [],
-        "degradado": bool(resultado["fuentesInventadas"]),
-        "detalle_agente": {
-            "fuentes": resultado["fuentes"],
+    return RespuestaAgente(
+        agente="nutrition",
+        texto=resultado["respuesta"],
+        herramientas_invocadas=[],
+        fuentes=resultado["fuentes"],
+        degradado=bool(resultado["fuentesInventadas"]),
+        detalle={
             "fuentes_inventadas": resultado["fuentesInventadas"],
             "fragmentos_recuperados": resultado["fragmentosRecuperados"],
             "cubierto": resultado["cubierto"],
         },
-    }
+    )
 
 
 _AGENTES = [
@@ -125,6 +117,7 @@ _AGENTES = [
         "nombre": "wellness_coach",
         "intencion": "entrenamiento",
         "titulo": "Wellness Coach Agent",
+        "etiqueta": "Sobre tu entrenamiento",
         "descripcion": (
             "Entrenamiento de running: carga semanal y su progresion, zonas de "
             "intensidad y umbrales, distribucion de intensidad, prevencion de "
@@ -137,6 +130,7 @@ _AGENTES = [
         "nombre": "nutrition",
         "intencion": "nutricion",
         "titulo": "Nutrition Agent",
+        "etiqueta": "Sobre tu alimentacion",
         "descripcion": (
             "Alimentacion e hidratacion del corredor: que comer antes, durante "
             "y despues de entrenar, reposicion de carbohidratos y electrolitos, "
@@ -175,10 +169,6 @@ def catalogo_para_prompt() -> str:
     automaticamente, sin que nadie tenga que acordarse de editar el texto. En
     el Sprint 2, dos de los seis hallazgos fueron desajustes entre lo que el
     prompt describia y lo que el codigo hacia.
-
-    Los dominios sin agente se anuncian igual: el clasificador debe poder
-    reconocerlos para que el orquestador responda con honestidad en vez de
-    tratarlos como temas ajenos a la plataforma.
     """
     lineas = []
     for a in _AGENTES:
@@ -191,12 +181,7 @@ def catalogo_para_prompt() -> str:
 
 
 def resolver(intencion: str) -> dict | None:
-    """Devuelve la entrada del agente que atiende esa intencion, o None.
-
-    None significa dos cosas distintas que el orquestador diferencia: que la
-    intencion es generica (no le corresponde ningun dominio) o que es un
-    dominio previsto sin agente todavia.
-    """
+    """Devuelve la entrada del agente que atiende esa intencion, o None."""
     for a in _AGENTES:
         if a["intencion"] == intencion:
             return a

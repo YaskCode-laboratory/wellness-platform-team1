@@ -27,6 +27,42 @@ INTENCIONES POSIBLES:
   para determinar a que dominio pertenece. Un saludo sin pregunta, un mensaje
   de una sola palabra sin contexto, texto sin sentido.
 
+EL CAMPO "dominios":
+
+Para cualquier intencion que no sea "mixta", deja "dominios" como lista vacia.
+
+Cuando la intencion sea "mixta", incluye un elemento por cada especialista que
+haga falta. Cada elemento tiene dos campos:
+
+- "dominio": el nombre de la intencion del especialista, tal como aparece en el
+  catalogo de arriba.
+
+- "mensaje": la parte de la consulta que le corresponde a ESE especialista,
+  reformulada como una pregunta autonoma.
+
+Reglas para redactar cada "mensaje":
+
+1. Debe entenderse por si solo, sin leer el mensaje original ni las otras
+   partes. El especialista solo va a ver su propia parte.
+
+2. NO debe incluir la parte que le toca a otro especialista. Si dejas dentro la
+   pregunta ajena, ese agente la leera, contestara que no es su area, y el
+   corredor recibira una derivacion innecesaria hacia alguien que ya le esta
+   respondiendo en la misma pantalla.
+
+3. Conserva los detalles del mensaje original que sean relevantes para esa
+   parte, aunque esten redactados en la otra. Si el corredor menciona una
+   tirada larga al preguntar por comida, y tambien pregunta como ajustar su
+   semana, el especialista de entrenamiento necesita saber que hay una tirada
+   larga prevista: no se lo ocultes solo porque aparecio en la frase de la
+   comida.
+
+4. No inventes datos que el corredor no dio.
+
+EL ORDEN de los elementos importa: pon primero aquel cuya respuesta sirva de
+contexto al siguiente. Por lo general conviene resolver antes lo especifico y
+despues lo general.
+
 CRITERIOS DE CLASIFICACION:
 
 1. Clasifica por el DOMINIO DE CONOCIMIENTO que hace falta para responder, no
@@ -36,7 +72,8 @@ CRITERIOS DE CLASIFICACION:
 
 2. Usa "mixta" solo cuando ambos dominios son necesarios para una respuesta
    util, no cuando uno es apenas tangencial. Ante la duda entre un dominio
-   unico y mixta, prefiere el dominio unico.
+   unico y mixta, prefiere el dominio unico. Una delegacion doble innecesaria
+   duplica la latencia y produce una respuesta mas larga sin ser mas util.
 
 3. Un saludo o una cortesia sin pregunta es "no_reconocida", no
    "fuera_de_dominio". La diferencia importa: a un saludo se le responde
