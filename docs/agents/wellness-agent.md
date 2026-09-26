@@ -127,11 +127,13 @@ herramientas disponibles y las condiciones bajo las cuales debe invocar cada
 una — es un prompt de **orquestación de herramientas**, no solo de generación
 fundamentada.
 
-Se diseña como parte de este mismo issue, en
-`prompts/agents/wellness_coach_agent.txt` (pendiente de redactar en el
-siguiente paso de #11), conservando los principios ya validados en el prompt
-RAG: instrucciones de anclaje explícitas, fecha actual inyectada, validación
-programática de citas cuando la respuesta involucre `consultar_base_conocimiento`.
+Se diseñó como parte de este mismo issue, en
+`prompts/agents/wellness_coach_agent.txt`, conservando los principios ya
+validados en el prompt RAG: instrucciones de anclaje explícitas, fecha
+actual inyectada, validación programática de citas cuando la respuesta
+involucre `consultar_base_conocimiento`. Su contenido completo y la
+justificación de cada decisión de redacción están documentados en
+`docs/agents/prompts.md`.
 
 ## 6. Flujo de razonamiento (alto nivel)
 
@@ -183,8 +185,7 @@ relación.
 - No introduce ningún framework de agentes nuevo — se implementa sobre el SDK
   directo de Vertex AI (`vertexai.generative_models`), consistente con la
   decisión ya tomada por el equipo para este sprint (ver
-  `docs/architecture/agent-architecture.md` §2.1, pendiente de completar al
-  iniciar #13).
+  `docs/architecture/agent-architecture.md` §2.1).
 - Requiere un cambio de modelo de datos ya decidido: campo `ciudad` en el
   perfil de usuario (`users`), y una colección nueva `conversations` para la
   memoria de largo plazo (diseño detallado en el issue #12).
