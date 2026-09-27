@@ -6,8 +6,8 @@ se espera, sin invocar a ningun agente.
 
 POR QUE SEPARADO DE LAS PRUEBAS UNITARIAS
 
-Las 109 pruebas de la suite usan mocks: no tocan Firestore, ni Vertex AI, ni
-ChromaDB, ni Open-Meteo. Esa decision es deliberada -- es lo que permite que el
+La suite completa usa mocks: no toca Firestore, ni Vertex AI, ni ChromaDB, ni
+Open-Meteo. Esa decision es deliberada -- es lo que permite que el
 CI corra sin credenciales de GCP -- pero deja un punto ciego que este sprint y
 el anterior demostraron que es real: en el Sprint 2 las 50 pruebas estaban en
 verde mientras un error 500 de Open-Meteo tumbaba la evaluacion completa.
@@ -66,17 +66,44 @@ def _medir(nombre: str, funcion) -> dict:
 
 # ── Comprobaciones ───────────────────────────────────────────────────────────
 
-def comprobar_configuracion() -> str:
+CLAVES_CONFIGURACION = ("GCP_PROJECT", "GCP_LOCATION", "GEMINI_MODEL", "EMBEDDING_MODEL")
+
+
+def comprobar_configuracion_efectiva() -> str:
+    """Informa con que configuracion se esta corriendo y de donde sale.
+
+    Deliberadamente NO comprueba que las variables de entorno esten definidas,
+    porque no podria: src/utils/config.py declara un valor por defecto para
+    cada una, de modo que leer config.GCP_PROJECT devuelve algo siempre. La
+    version anterior se llamaba "Configuracion por variables de entorno" y solo
+    verificaba que esos atributos no estuvieran vacios, lo que se cumplia
+    incluso con el entorno entero sin configurar. Un nombre que promete mas de
+    lo que comprueba es peor que no comprobar nada: da confianza injustificada.
+
+    Lo que si es util saber es CUAL es el valor activo y si viene del entorno o
+    del valor por defecto, porque explica la mayoria de los desajustes entre lo
+    que alguien cree estar corriendo y lo que corre. Se reporta esa
+    procedencia.
+
+    Falla solo si un valor efectivo queda vacio, que significaria una variable
+    definida como cadena vacia -- el unico caso realmente roto.
+    """
+    import os
+
     from src.utils import config
 
-    faltantes = [
-        nombre
-        for nombre in ("GCP_PROJECT", "GCP_LOCATION", "GEMINI_MODEL", "EMBEDDING_MODEL")
-        if not getattr(config, nombre, None)
-    ]
-    if faltantes:
-        raise ValueError(f"configuracion incompleta: {faltantes}")
-    return f"proyecto={config.GCP_PROJECT} modelo={config.GEMINI_MODEL}"
+    vacias = [n for n in CLAVES_CONFIGURACION if not getattr(config, n, None)]
+    if vacias:
+        raise ValueError(f"configuracion efectiva vacia: {vacias}")
+
+    del_entorno = [n for n in CLAVES_CONFIGURACION if os.getenv(n)]
+    por_defecto = [n for n in CLAVES_CONFIGURACION if n not in del_entorno]
+
+    detalle = f"proyecto={config.GCP_PROJECT} modelo={config.GEMINI_MODEL}"
+    detalle += f" | del entorno: {len(del_entorno)}/{len(CLAVES_CONFIGURACION)}"
+    if por_defecto:
+        detalle += f" | por defecto: {', '.join(por_defecto)}"
+    return detalle
 
 
 def comprobar_firestore_perfil() -> str:
@@ -121,7 +148,14 @@ def comprobar_vertex_embeddings() -> str:
     return f"vector de {len(vector)} dimensiones"
 
 
-def comprobar_vertex_generacion() -> str:
+def comprobar_vertex_clasificacion() -> str:
+    """Ejercita Gemini a traves del clasificador de intencion.
+
+    Se llamaba "Vertex AI - generacion", que describia mal lo que hace: no
+    prueba la generacion de respuestas de los agentes sino la clasificacion,
+    que usa el modelo con response_schema y temperature=0. Son dos usos
+    distintos del mismo servicio y pueden fallar por separado.
+    """
     from src.orchestration.orchestrator.clasificador import clasificar
 
     resultado = clasificar("Puedo entrenar fuerte hoy?")
@@ -167,13 +201,13 @@ def comprobar_open_meteo() -> str:
 
 
 COMPROBACIONES = [
-    ("Configuracion por variables de entorno", comprobar_configuracion),
+    ("Configuracion efectiva", comprobar_configuracion_efectiva),
     ("Firestore - perfil del corredor", comprobar_firestore_perfil),
     ("Firestore - sesiones y objetivos", comprobar_firestore_sesiones),
     ("Firestore - memoria conversacional", comprobar_firestore_memoria),
     ("Firestore - registro de delegaciones", comprobar_firestore_delegaciones),
     ("Vertex AI - embeddings", comprobar_vertex_embeddings),
-    ("Vertex AI - generacion", comprobar_vertex_generacion),
+    ("Vertex AI - clasificacion de intencion", comprobar_vertex_clasificacion),
     ("ChromaDB - dominio del Coach", comprobar_chromadb_coach),
     ("ChromaDB - dominio de nutricion", comprobar_chromadb_nutricion),
     ("Open-Meteo - clima", comprobar_open_meteo),
@@ -192,7 +226,10 @@ def main() -> int:
     total_ms = sum(r["latencia_ms"] for r in resultados)
 
     _titulo("RESUMEN")
-    print(f"  Integraciones comprobadas : {len(resultados)}")
+    # "Comprobaciones" y no "integraciones": son diez comprobaciones sobre
+    # cinco dependencias externas, y varias ejercitan la misma. Contarlas como
+    # integraciones infla el numero.
+    print(f"  Comprobaciones ejecutadas : {len(resultados)}")
     print(f"  Correctas                 : {len(resultados) - len(fallidas)}")
     print(f"  Fallidas                  : {len(fallidas)}")
     print(f"  Tiempo total              : {total_ms} ms")

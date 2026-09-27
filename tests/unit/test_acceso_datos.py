@@ -18,6 +18,19 @@ LA MATRIZ DE ACCESO
 
 El orquestador no accede a ningun dato del corredor: clasifica y delega. Si
 empezara a consultar por su cuenta dejaria de ser un coordinador.
+
+COBERTURA DE LAS TRES FILAS
+
+La primera version cubria el Nutrition Agent y el orquestador, pero no el
+Coach. Es la fila mas ancha -- seis de las siete columnas -- y justamente por
+eso la que mas necesita cobertura: con tantos accesos legitimos, uno
+ilegitimo no llamaria la atencion.
+
+El Coach se verifica a traves del despachador de herramientas y no invocando
+su ciclo ReAct completo. Su acceso a datos pasa siempre por ahi desde la
+correccion S2-04, que centralizo el despacho, y probarlo en ese punto no
+depende de que el modelo decida invocar cada herramienta en una corrida
+concreta.
 """
 
 import unittest
@@ -26,6 +39,7 @@ from unittest.mock import MagicMock, patch
 
 from src.agents.nutrition.agent import CATEGORIA_NUTRICION, NutritionAgent
 from src.agents.wellness_coach.tools.conocimiento import CATEGORIAS_COACH
+from src.agents.wellness_coach.tools.registro import _HERRAMIENTAS, despachar
 from src.orchestration.delegation import registro as registro_delegaciones
 from src.orchestration.orchestrator import agent as modulo_orquestador
 
@@ -141,6 +155,111 @@ class TestAccesoDelNutritionAgent(unittest.TestCase):
         _, kwargs = self.mock_recuperar.call_args
         self.assertEqual(kwargs["categoria"], CATEGORIA_NUTRICION)
         self.assertNotIn("categorias", kwargs)
+
+
+class TestAccesoDelWellnessCoach(unittest.TestCase):
+    """La fila del Coach en la matriz, celda por celda.
+
+    Las pruebas anteriores cubrian el Nutrition Agent y el orquestador, pero
+    no el Coach, que es el agente con la fila mas ancha: accede a seis de las
+    siete columnas. Justamente por eso es donde una ampliacion indebida
+    pasaria mas facilmente inadvertida -- con tantos accesos legitimos, uno
+    ilegitimo no llama la atencion.
+
+    Se verifica a traves del despachador de herramientas y no invocando el
+    ciclo ReAct completo: el acceso a datos del Coach ocurre siempre por ahi
+    (es la conclusion de la correccion S2-04, que centralizo el despacho), y
+    probarlo en ese punto no depende de que el modelo decida invocar cada
+    herramienta.
+    """
+
+    def setUp(self):
+        parche_repo = patch("src.agents.wellness_coach.tools.historial._repo")
+        self.repo = parche_repo.start()
+        self.addCleanup(parche_repo.stop)
+        self.repo.obtener_sesiones_recientes.return_value = [{"distanciaKm": 8}]
+        self.repo.calcular_carga_semanal.return_value = (24.0, 20.0)
+        self.repo.obtener_objetivos_activos.return_value = [{"kmMeta": 30}]
+
+        parche_recuperar = patch(
+            "src.agents.wellness_coach.tools.conocimiento.recuperar"
+        )
+        self.recuperar = parche_recuperar.start()
+        self.addCleanup(parche_recuperar.stop)
+        self.recuperar.return_value = []
+
+    def test_accede_al_historial_de_sesiones(self):
+        despachar("consultar_historial_sesiones", {}, user_id="u1")
+
+        self.repo.obtener_sesiones_recientes.assert_called_once()
+        self.assertEqual(self.repo.obtener_sesiones_recientes.call_args[0][0], "u1")
+
+    def test_accede_a_la_carga_semanal_y_a_los_objetivos(self):
+        """Ambos pertenecen a su dominio: el progreso respecto a la meta es
+        precisamente lo que el criterio de S3-03 le asigna."""
+        despachar("consultar_progreso_objetivo", {}, user_id="u1")
+
+        self.repo.calcular_carga_semanal.assert_called_once_with("u1")
+        self.repo.obtener_objetivos_activos.assert_called_once_with("u1")
+
+    def test_el_user_id_lo_inyecta_el_despachador_no_el_modelo(self):
+        """Los argumentos que produce el modelo nunca incluyen el
+        identificador del corredor: lo pone el despachador desde el contexto
+        de la peticion. Es lo que impide que una salida del modelo induzca a
+        leer datos de otro usuario."""
+        despachar("consultar_historial_sesiones", {"user_id": "otro-corredor"},
+                  user_id="u1")
+
+        self.assertEqual(self.repo.obtener_sesiones_recientes.call_args[0][0], "u1")
+
+    def test_su_recuperacion_se_restringe_a_sus_seis_categorias(self):
+        despachar("consultar_base_conocimiento", {"consulta": "zona 2"}, user_id="u1")
+
+        _, kwargs = self.recuperar.call_args
+        self.assertEqual(kwargs["categorias"], CATEGORIAS_COACH)
+        self.assertNotIn("categoria", kwargs)
+
+    def test_no_puede_recuperar_documentacion_de_nutricion(self):
+        """La celda que cierra la frontera. Se comprueba sobre la lista de
+        categorias y no sobre un resultado, porque el filtro es lo que da la
+        garantia: mientras 'nutricion' no este ahi, no hay consulta que pueda
+        traerla."""
+        despachar("consultar_base_conocimiento", {"consulta": "que como antes?"},
+                  user_id="u1")
+
+        _, kwargs = self.recuperar.call_args
+        self.assertNotIn(CATEGORIA_NUTRICION, kwargs["categorias"])
+
+    def test_la_descripcion_de_la_herramienta_no_promete_nutricion(self):
+        """El filtro impide RECUPERAR nutricion, no impide que el modelo crea
+        que deberia encontrarla. La descripcion de la FunctionDeclaration es
+        lo que lee para decidir si invoca, y durante S3-03 a S3-05 siguio
+        anunciando nutricion pese a que el filtro ya la excluia. El modelo
+        invocaba, no recibia nada, y quedaba ante un vacio aparente de la base
+        de conocimiento en lugar de reconocer que el tema es de otro agente.
+
+        Garantia estructural y descripcion cubren huecos distintos: hace falta
+        que coincidan."""
+        herramienta = next(
+            h for h in _HERRAMIENTAS if h["name"] == "consultar_base_conocimiento"
+        )
+        descripcion = herramienta["description"].lower()
+
+        self.assertIn("no cubre nutricion", descripcion)
+
+    def test_no_accede_a_los_datos_de_otro_corredor(self):
+        """Ninguna herramienta del Coach recibe un identificador ajeno: todas
+        las que tocan datos lo toman del despachador."""
+        for nombre in ("consultar_historial_sesiones", "consultar_progreso_objetivo"):
+            self.repo.reset_mock()
+            despachar(nombre, {}, user_id="u-propio")
+
+            usados = {
+                posicionales[0]
+                for _, posicionales, _ in self.repo.method_calls
+                if posicionales
+            }
+            self.assertEqual(usados, {"u-propio"}, f"{nombre} uso {usados}")
 
 
 class TestAccesoDelOrquestador(unittest.TestCase):
