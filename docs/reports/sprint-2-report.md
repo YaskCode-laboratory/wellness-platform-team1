@@ -34,11 +34,14 @@ Open-Meteo).
 
 La evaluación (#15) fue la fase más reveladora del sprint. Cinco rondas de
 medición contra servicios reales encontraron **seis defectos** que ninguna
-de las 50 pruebas unitarias con mocks había detectado — porque, por
-diseño, un mock nunca falla como falla un servicio real. La tasa de
-acierto de herramientas del agente pasó de 70% en la primera medición a
-**100% en la quinta y última**, con cada corrección documentada junto a la
-evidencia que la motivó.
+de las 50 pruebas unitarias con mocks que existían en ese momento había
+detectado — porque, por diseño, un mock nunca falla como falla un servicio
+real. La tasa de acierto de herramientas del agente pasó de 70% en la
+primera medición a **100% en la quinta y última**, con cada corrección
+documentada junto a la evidencia que la motivó. Tras la revisión formal
+del PR y las correcciones derivadas de ella (issues S2-04 y CI), la suite
+creció a **63 pruebas**, todas en verde y verificadas automáticamente por
+GitHub Actions en cada Pull Request hacia `main`.
 
 ## 2. Arquitectura actualizada del sistema
 
@@ -256,8 +259,9 @@ de resultados completo.)
 ### 8.3 Los seis hallazgos
 
 Cada uno se detectó exclusivamente en medición contra servicios reales —
-ninguno era detectable con las 50 pruebas unitarias con mocks, que se
-mantuvieron en verde durante las cinco rondas.
+ninguno era detectable con las 50 pruebas unitarias con mocks que existían
+durante la etapa de evaluación original, que se mantuvieron en verde
+durante las cinco rondas.
 
 **Hallazgo A — Memoria contaminada entre casos.** La memoria conversacional
 se limpiaba solo al sembrar el usuario de prueba, no entre cada caso del
