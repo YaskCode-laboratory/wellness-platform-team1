@@ -10,7 +10,8 @@ const Perfil = () => {
     nombre: '',
     peso: '',
     edad: '',
-    nivel: 'principiante'
+    nivel: 'principiante',
+    ciudad: ''
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,7 +26,8 @@ const Perfil = () => {
           nombre: res.data.nombre || '',
           peso: res.data.peso || '',
           edad: res.data.edad || '',
-          nivel: res.data.nivel || 'principiante'
+          nivel: res.data.nivel || 'principiante',
+          ciudad: res.data.ciudad || ''
         })
       } catch (err) {
         console.log('Error:', err)
@@ -50,7 +52,8 @@ const Perfil = () => {
         nombre: form.nombre,
         peso: parseFloat(form.peso),
         edad: parseInt(form.edad),
-        nivel: form.nivel
+        nivel: form.nivel,
+        ciudad: form.ciudad || null
       })
       setExito(true)
       setTimeout(() => setExito(false), 3000)
@@ -167,6 +170,24 @@ const Perfil = () => {
               <option value="intermedio">Intermedio</option>
               <option value="avanzado">Avanzado</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ciudad
+            </label>
+            <input
+              type="text"
+              name="ciudad"
+              value={form.ciudad}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: Maracaibo"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Permite que el coach consulte el clima antes de recomendarte un
+              entrenamiento. Si la dejas vacía, te lo dirá en vez de suponerlo.
+            </p>
           </div>
 
           {error && (
