@@ -38,9 +38,25 @@ que define un sistema multiagente.
 
 | Agente | Responsabilidad | Fuera de su alcance |
 |---|---|---|
-| **Orchestrator Agent** | Recibir la solicitud, determinar la intención, delegar al agente competente, devolver el resultado | No responde al corredor por su cuenta ni consulta la base de conocimiento |
+| **Orchestrator Agent** | Recibir la solicitud, determinar la intención, delegar al agente competente, devolver el resultado. Emitir por sí mismo las respuestas de control del flujo | No genera respuestas especializadas de dominio ni consulta la base de conocimiento |
 | **Wellness Coach Agent** | Entrenamiento de running: carga, intensidad, lesiones, tapering, recuperación, progreso del corredor | Nutrición, hidratación y pautas alimentarias |
 | **Nutrition Agent** | Nutrición del corredor: ingesta, hidratación, pautas antes/durante/después del entrenamiento | Prescripción de entrenamiento y análisis de carga |
+
+La fila del orquestador distingue dos cosas que conviene no confundir. El
+orquestador **sí** produce texto dirigido al corredor en tres situaciones, todas
+de control del flujo: cuando no reconoce la intención y pide aclaración, cuando
+la consulta queda fuera del dominio de la plataforma y redirige, y cuando un
+agente falla y hay que declararlo. Son respuestas fijas, no generadas, y su
+contenido es sobre la conversación, no sobre running.
+
+Lo que **no** hace es producir contenido especializado: no responde una pregunta
+de entrenamiento ni de nutrición, no consulta la base de conocimiento, no accede
+a los datos del corredor y no reescribe lo que dicen los agentes. Esa es la
+frontera que lo mantiene siendo un coordinador. Si empezara a resolver casos por
+su cuenta, el sistema tendría la lógica de dominio repartida entre el
+coordinador y los especialistas, que es precisamente lo que el patrón Supervisor
+busca evitar. Las cuatro situaciones previstas y su respuesta están en la
+sección 6.
 
 El **Wellness Coach** es el agente especializado asignado a este equipo. El
 **Nutrition Agent** se incorpora como segundo participante por una razón
@@ -139,8 +155,8 @@ queda fuera por la razón expuesta en 2.1 y conserva su endpoint propio sobre
 `RepositorioCorredor` y el pipeline RAG, sin pasar por el orquestador.
 
 Las llamadas a Vertex AI se omiten como aristas individuales para no saturar el
-diagrama: **los tres agentes y el orquestador invocan a Gemini**, y el pipeline
-RAG lo usa además para generar embeddings de consulta.
+diagrama: **el orquestador y los dos agentes especializados invocan a Gemini**,
+y el pipeline RAG lo usa además para generar embeddings de consulta.
 
 ```mermaid
 graph TD
@@ -368,7 +384,7 @@ funcionó**.
 | D-04 | Nutrition Agent como segundo participante | Un solo agente especializado | Sin un segundo agente no hay colaboración que verificar |
 | D-05 | `WellnessAgent` fuera del flujo multiagente | Incorporarlo como tercer agente | Su salida es JSON estructurado, no conversacional |
 | D-06 | Los agentes no delegan entre sí | Delegación horizontal | Elimina los ciclos por construcción |
-| D-07 | SDK directo de Vertex AI | LangGraph | Se reevaluó para este sprint: ver 8.1 |
+| D-07 | SDK directo de Vertex AI | LangGraph | Se reevaluó para este sprint: ver 7.1 |
 
 ### 7.1 Sobre LangGraph
 

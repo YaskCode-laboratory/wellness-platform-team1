@@ -53,7 +53,16 @@ acceder a su estado de entrenamiento mediante las herramientas).
 dado que su naturaleza es dialogar, no emitir un veredicto estructurado en cada
 turno. Puede acompañar su respuesta con metadata de trazabilidad (fuentes
 citadas, herramientas invocadas) cuando corresponda — el diseño exacto de ese
-sobre de respuesta se resuelve al implementar el endpoint en el issue #12.
+sobre de respuesta quedó resuelto al implementar el endpoint en el issue #12.
+
+**Estado final implementado:** `WellnessCoachAgent.conversar()` devuelve un
+diccionario con `respuesta` (texto), `herramientasInvocadas` (lista de las
+herramientas que el modelo invocó en el turno, con sus argumentos),
+`limiteAlcanzado` (booleano, ver `MAX_ITERACIONES_HERRAMIENTAS` en
+`agent.py`), y las dos señales de diagnóstico agregadas tras el hallazgo C:
+`reintentoUtilizado` y `reintentoFallido`. No incluye fuentes citadas como
+campo estructurado separado — la cita se maneja dentro del propio texto de
+`respuesta`, según las reglas de citación de `docs/agents/prompts.md` §3.
 
 **Fuentes de información**, en orden de cuándo se consultan:
 
@@ -112,9 +121,11 @@ mensajes atrás). Esto significa que `consultar_base_conocimiento` no puede
 tomar el último mensaje del usuario tal cual como consulta de recuperación:
 requiere que el propio modelo formule, como parte de su razonamiento, una
 consulta que incorpore el contexto conversacional relevante. El mecanismo
-concreto para esto se diseña en el issue #14 (patrón ReAct); se deja
-registrado aquí para que la implementación de memoria (#12) y de tools (#13)
-no asuma que la recuperación funciona igual que en el modo de un solo turno.
+concreto para esto se diseñó en el issue #14 (patrón ReAct) y quedó
+implementado en el ciclo de `WellnessCoachAgent.conversar()`; se deja
+registrado aquí porque este riesgo anticipado en el diseño se manifestó
+después de forma concreta como los hallazgos C y F, documentados en las
+secciones 10 y 12.
 
 ## 5. Prompt especializado
 
@@ -127,11 +138,13 @@ herramientas disponibles y las condiciones bajo las cuales debe invocar cada
 una — es un prompt de **orquestación de herramientas**, no solo de generación
 fundamentada.
 
-Se diseña como parte de este mismo issue, en
-`prompts/agents/wellness_coach_agent.txt` (pendiente de redactar en el
-siguiente paso de #11), conservando los principios ya validados en el prompt
-RAG: instrucciones de anclaje explícitas, fecha actual inyectada, validación
-programática de citas cuando la respuesta involucre `consultar_base_conocimiento`.
+Se diseñó como parte de este mismo issue, en
+`prompts/agents/wellness_coach_agent.txt`, conservando los principios ya
+validados en el prompt RAG: instrucciones de anclaje explícitas, fecha
+actual inyectada, validación programática de citas cuando la respuesta
+involucre `consultar_base_conocimiento`. Su contenido completo y la
+justificación de cada decisión de redacción están documentados en
+`docs/agents/prompts.md`.
 
 ## 6. Flujo de razonamiento (alto nivel)
 
@@ -183,8 +196,7 @@ relación.
 - No introduce ningún framework de agentes nuevo — se implementa sobre el SDK
   directo de Vertex AI (`vertexai.generative_models`), consistente con la
   decisión ya tomada por el equipo para este sprint (ver
-  `docs/architecture/agent-architecture.md` §2.1, pendiente de completar al
-  iniciar #13).
+  `docs/architecture/agent-architecture.md` §2.1).
 - Requiere un cambio de modelo de datos ya decidido: campo `ciudad` en el
   perfil de usuario (`users`), y una colección nueva `conversations` para la
   memoria de largo plazo (diseño detallado en el issue #12).
@@ -199,6 +211,13 @@ issues indicados:
 - Implementación del ciclo ReAct completo → #14
 - El endpoint de chat (`POST /agent-coach/{userId}/chat`) → #12
 - Casos de prueba y evaluación del comportamiento → #15
+
+**Estado final:** los cinco puntos anteriores están completados. Los issues
+#12, #13 y #14 se implementaron y verificaron contra servicios reales (ver
+secciones 10 a 12 para las correcciones surgidas de esa verificación); el
+endpoint de chat quedó resuelto como parte de #12; la evaluación del
+comportamiento (#15) se cerró con 100% de tasa de acierto de invocación de
+herramientas en la quinta medición.
 
 ## 10. Corrección post-verificación real: reintento acotado ante declaración sin invocar (issue #15)
 

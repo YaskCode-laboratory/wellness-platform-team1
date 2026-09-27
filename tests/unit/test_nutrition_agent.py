@@ -151,8 +151,19 @@ class TestNutritionAgent(unittest.TestCase):
     def test_el_vacio_declarado_por_el_modelo_se_propaga(
         self, mock_recuperar, mock_generar
     ):
-        """Los fragmentos existen pero no responden la pregunta. El modelo lo
-        declara con cubierto=false y el orquestador lo traduce en degradacion."""
+        """Los fragmentos existen pero no responden la pregunta, y el modelo lo
+        declara con cubierto=false.
+
+        Eso NO es una degradacion. Desde la correccion S2-04, 'degradado'
+        significa que una capacidad fallo; que la base de conocimiento no cubra
+        un tema es el sistema funcionando -- el agente comprobo que no
+        alcanzaba y lo dijo, en vez de rellenarlo con conocimiento no
+        verificado. El adaptador _invocar_nutrition() lo refleja: marca
+        degradado unicamente ante fuentes inventadas, y la cobertura viaja en
+        el detalle para medirse por separado. Contar un vacio documental como
+        fallo registraria la conducta correcta igual que un error y
+        contaminaria la medicion de S3-06.
+        """
         mock_recuperar.return_value = [chunk("KB-006")]
         mock_generar.return_value = {
             "respuesta": "La base de conocimiento no cubre suplementacion.",
