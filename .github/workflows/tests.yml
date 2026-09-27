@@ -1,14 +1,27 @@
 name: Tests
 
-# Se dispara ante cada PR hacia develop o main. Incluir develop es lo que hace
-# que cada PR del Sprint 3 muestre sus propios Checks: las ramas encadenadas
-# apuntan entre si y luego a develop, no a main, de modo que limitarlo a main
-# dejaria seis de los siete PRs sin verificacion visible.
+# Se dispara ante CUALQUIER Pull Request, sin filtrar por rama destino.
+#
+# El filtro paso por dos versiones antes de esta. Primero 'branches: [main]',
+# suficiente mientras cada sprint entraba en un unico PR hacia main. Luego
+# 'branches: [develop, main]', al abrir el Sprint 3.
+#
+# La segunda tampoco alcanza bajo la metodologia de un issue -> una rama ->
+# un PR. Los siete PR del sprint estan encadenados y cada uno apunta a su
+# predecesor, no a develop: solo el primero de la cadena cumple el filtro, y
+# los demas van cumpliendolo de uno en uno a medida que se integran los
+# anteriores. La evidencia de CI acaba dependiendo del orden de merge, cuando
+# es justamente lo que hay que poder ver ANTES de mergear.
+#
+# El trigger de push sobre develop no cubre el hueco: se dispara al integrar y
+# su resultado queda asociado al commit de develop, no al Pull Request donde
+# ocurre la revision.
+#
+# Sin filtro, si cada issue tiene su PR, cada PR ensena su suite.
 on:
   pull_request:
-    branches: [develop, main]
   push:
-    branches: [develop]
+    branches: [develop, main]
 
 jobs:
   test:
@@ -33,8 +46,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # No se configura ningun secret de GCP a proposito. Las pruebas usan
-      # mocks y no tocan Vertex AI, Firestore ni ChromaDB: es una consecuencia
+      # No se configura ningun secret de GCP a proposito. Toda la suite usa
+      # mocks y no toca Vertex AI, Firestore ni ChromaDB: es una consecuencia
       # directa del cliente perezoso de Firestore (#10) y de que
       # vertexai.init() no autentica al importar. Si este paso empieza a
       # requerir credenciales, es senal de que una prueba dejo de estar

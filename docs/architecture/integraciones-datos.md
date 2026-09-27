@@ -55,9 +55,32 @@ taxonomía del Sprint 1 se reparten entre los dos agentes sin solaparse.
 ### 2.1 Cómo se verifica
 
 La matriz no es una afirmación de este documento: es un invariante con pruebas.
-`tests/unit/test_acceso_datos.py` comprueba que el Nutrition Agent no invoca las
-consultas de historial, que su recuperación se restringe a su categoría, y que
-el módulo del orquestador no importa siquiera el repositorio ni el retriever.
+`tests/unit/test_acceso_datos.py` cubre las tres filas.
+
+**Nutrition.** No invoca las consultas de historial y su recuperación se
+restringe a su categoría.
+
+**Wellness Coach.** Es la fila más ancha —seis de las siete columnas— y por eso
+la que más necesita cobertura: con tantos accesos legítimos, uno ilegítimo no
+llamaría la atención. Se verifica a través del despachador de herramientas, que
+desde la corrección S2-04 es el punto único por donde pasa todo su acceso a
+datos. Se comprueba que llega al historial, a la carga semanal y a los
+objetivos; que su recuperación usa las seis categorías y que `nutricion` no
+está entre ellas; y que el `user_id` lo inyecta el despachador desde el
+contexto de la petición, de modo que un argumento producido por el modelo no
+puede redirigir la consulta a otro corredor.
+
+Una prueba más cubre un hueco que el filtro de categorías no puede tapar: la
+**descripción** de la `FunctionDeclaration` de `consultar_base_conocimiento`.
+Es lo que el modelo lee para decidir si invoca la herramienta, y durante S3-03
+a S3-05 siguió anunciando que cubría nutrición, heredado del Sprint 2, cuando
+el filtro ya la excluía. El modelo invocaba, no recibía nada, y quedaba ante un
+vacío aparente de la base de conocimiento en vez de reconocer que el tema
+pertenece a otro agente. La garantía estructural impide *recuperar* lo ajeno;
+no impide que el modelo crea que debería encontrarlo. Hacen falta las dos, y
+que coincidan.
+
+**Orchestrator.** El módulo no importa siquiera el repositorio ni el retriever.
 
 Esa última comprobación es estática a propósito: un acceso a datos empieza
 siempre por una importación, así que verificar los nombres que el módulo conoce
@@ -107,8 +130,8 @@ decenas de documentos por usuario el costo es despreciable y elimina una
 dependencia de configuración externa.
 
 **Cliente perezoso.** `src/database/firestore_client.py` retrasa la conexión
-hasta el primer uso real. Es lo que permite que las 121 pruebas de la suite
-corran sin credenciales — y, en consecuencia, que el pipeline de CI no necesite
+hasta el primer uso real. Es lo que permite que la suite completa
+corra sin credenciales — y, en consecuencia, que el pipeline de CI no necesite
 ningún secret de GCP.
 
 ### 3.4 La colección `delegaciones`
@@ -221,11 +244,12 @@ python -m scripts.evaluation.seed_agent_test_user
 python -m scripts.verificacion.verificar_integraciones
 ```
 
-Comprueba las diez integraciones sin invocar a ningún agente, y devuelve código
+Ejecuta diez comprobaciones sobre las cinco dependencias externas, sin
+invocar a ningún agente, y devuelve código
 de salida distinto de cero si alguna falla, para poder encadenarlo en un script
 de despliegue.
 
-Existe porque las 121 pruebas de la suite usan mocks y no tocan ningún servicio.
+Existe porque la suite completa usa mocks y no toca ningún servicio.
 Esa decisión es deliberada —es lo que permite que el CI corra sin credenciales—
 pero deja un punto ciego que los dos sprints anteriores demostraron que es real.
 El script no sustituye a la suite: la suite verifica la lógica, esto verifica
@@ -234,18 +258,18 @@ que el mundo exterior está donde lo dejamos.
 Resultado de la última ejecución:
 
 ```
-[OK] Configuracion por variables de entorno       12 ms  proyecto=runcoach-ai-496921
+[OK] Configuracion efectiva                       12 ms  proyecto=runcoach-ai-496921 | del entorno: 4/4
 [OK] Firestore - perfil del corredor            1693 ms  nivel=intermedio ciudad=Maracaibo peso=68
 [OK] Firestore - sesiones y objetivos            752 ms  carga 14.0 km (previa 5.0 km), 1 objetivo(s)
 [OK] Firestore - memoria conversacional          149 ms  0 turno(s)
 [OK] Firestore - registro de delegaciones        495 ms  2 traza(s) accesibles
 [OK] Vertex AI - embeddings                     3584 ms  vector de 768 dimensiones
-[OK] Vertex AI - generacion                     2249 ms  intencion=entrenamiento confianza=0.95
+[OK] Vertex AI - clasificacion de intencion     2249 ms  intencion=entrenamiento confianza=0.95
 [OK] ChromaDB - dominio del Coach                417 ms  3 fragmento(s): ['KB-001']
 [OK] ChromaDB - dominio de nutricion             326 ms  3 fragmento(s), todos de nutricion
 [OK] Open-Meteo - clima                         1598 ms  29.0 C en Maracaibo
 
-Integraciones comprobadas: 10   Correctas: 10   Fallidas: 0
+Comprobaciones ejecutadas: 10   Correctas: 10   Fallidas: 0
 ```
 
 ---

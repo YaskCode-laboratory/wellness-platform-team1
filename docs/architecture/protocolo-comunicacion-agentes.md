@@ -66,11 +66,12 @@ usuario induzca a consultar datos de otro corredor.
 | `herramientas_invocadas` | `list[str]` | Para trazabilidad |
 | `fuentes` | `list[str]` | `doc_id` realmente recuperados |
 | `degradado` | `bool` | Si alguna capacidad falló |
+| `fallo` | `bool` | Si el agente no llegó a producir contenido de dominio |
 | `detalle` | `dict` | Información específica del agente |
 | `latencia_ms` | `int` | Lo que tardó este agente |
 
-Dos campos tienen semántica que conviene fijar por escrito, porque de otro modo
-se interpretan mal al leer una traza:
+Tres campos tienen semántica que conviene fijar por escrito, porque de otro
+modo se interpretan mal al leer una traza:
 
 **`herramientas_invocadas` vacía no significa dato ausente.** El Nutrition
 Agent no usa tool calling por diseño: recupera y responde en una sola llamada.
@@ -83,6 +84,12 @@ recibió. Que la knowledge base no cubra una pregunta **no** es degradación: es
 el sistema funcionando — el agente comprobó que no alcanzaba y lo declaró en
 vez de rellenarlo. Contarlo como fallo registraría la conducta correcta igual
 que un error.
+
+**`fallo` es más estrecho que `degradado` y no son intercambiables.** Solo lo
+marca el punto de despacho, ante una excepción del agente. Un Coach que
+respondió bien pero no pudo consultar el clima viene `degradado=True,
+fallo=False`. La distinción decide si su texto se encadena como contexto al
+siguiente agente: ver sección 8.1.
 
 ---
 
@@ -263,6 +270,57 @@ no está en no caerse: está en conservar lo que sí funcionó.
 | El clasificador falla | No se delega; se pide aclaración |
 | Clasificación mixta sin dominios resolubles | No se delega; se pide aclaración |
 | Falla el registro de la traza | La solicitud se responde igual; el fallo va al log |
+
+### 8.1 Un fallo no se encadena como si fuera una respuesta
+
+Conservar lo que sí funcionó tiene una consecuencia que la primera versión
+pasó por alto: **lo que no funcionó tampoco debe propagarse.**
+
+Cuando un agente falla, su `texto` es `RESPUESTA_AGENTE_FALLO`, un mensaje del
+orquestador dirigido al corredor, no contenido de dominio. El encadenamiento lo
+tomaba igual que cualquier otra respuesta y producía:
+
+```
+Nutrition Agent respondió:
+No pude completar tu consulta en este momento por un problema técnico.
+```
+
+Ese bloque llegaba al segundo agente dentro de `mensaje_con_contexto()`, que le
+pide **complementar y no contradecir** lo que dijo el especialista anterior. El
+resultado es un agente tratando un mensaje de error como aportación de un
+colega: puede disculparse por algo que no le corresponde, o evitar un tema que
+el primero nunca llegó a cubrir. La degradación de uno acababa contaminando al
+otro, que es lo contrario de lo que persigue.
+
+Ahora el orquestador declara explícitamente que el paso anterior no produjo
+información utilizable. El siguiente agente conserva el dato de que hubo un
+paso previo —lo que evita respuestas incoherentes con el flujo— sin recibir un
+error disfrazado de contenido.
+
+`degradado` no sirve para decidir esto. Un Coach que respondió bien pero no
+pudo consultar el clima viene degradado, y su texto **sí** es contexto útil. El
+discriminante es `fallo`, que marca únicamente el punto de despacho y significa
+*no produjo contenido de dominio*:
+
+| Campo | Significa | ¿Se encadena su texto? |
+|---|---|---|
+| `degradado` | Alguna capacidad falló durante la ejecución | Sí |
+| `fallo` | El agente no llegó a producir contenido de dominio | No |
+
+### 8.2 La traza se construye con lo ejecutado, no con lo planificado
+
+La guarda contra repetición puede omitir una delegación, y entonces el plan y
+las respuestas dejan de tener la misma longitud. La primera versión
+reconstruía `mensajeDelegado` indexando el **plan** por la posición de la
+**respuesta**, de modo que una omisión intermedia desplazaba el índice y la
+traza atribuía a un agente un mensaje que nunca recibió.
+
+Una traza equivocada es peor que una traza ausente: se lee como evidencia. Y el
+defecto era doblemente grave porque solo se manifestaba **cuando actuaba una
+protección**, que es justo el momento en que hace falta poder auditar.
+
+`_ejecutar_plan()` devuelve ahora las delegaciones efectivamente ejecutadas
+junto a las respuestas, emparejadas por construcción.
 
 ---
 
