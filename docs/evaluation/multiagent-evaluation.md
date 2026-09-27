@@ -98,13 +98,10 @@ Ver 4.2.
 
 ## 2. Resultados
 
-> **Estas cifras corresponden a la corrida del 22 de septiembre y no al sistema
-> que se entrega.** Después de medirlas se descubrió que el prompt del Wellness
-> Coach estaba truncado —faltaban, entre otras, las reglas de citación— y que
-> `TOP_K` seguía en 5 pese a que el Sprint 1 había adoptado 3. Ambas cosas están
-> corregidas y la evaluación debe repetirse. Se conservan aquí porque el
-> análisis de las secciones 3 y 4 se apoya en ellas y porque la comparación
-> entre las dos corridas es en sí misma evidencia: ver 4.2.
+Corrida del **27 de septiembre**, con el prompt del Wellness Coach restaurado y
+`TOP_K = 3`. Sustituye a la corrida del 22 de septiembre, que se midió con el
+prompt truncado y `TOP_K = 5`. La comparación entre ambas no se descarta: es la
+evidencia de la sección 4.2.
 
 | Métrica | Valor |
 |---|---|
@@ -113,21 +110,45 @@ Ver 4.2.
 | Tasa de intención correcta | 100.0 % |
 | Casos con sobredelegación | ninguno |
 | Casos con subdelegación | ninguno |
-| Casos con orden de delegación incorrecto | ninguno |
+| Casos con orden de delegación incorrecto | MA-08 |
 | Casos degradados | ninguno |
 | Casos con colaboración | MA-08, MA-09 |
-| **Casos que cumplen su criterio de calidad** | **10/12** |
-| Casos que no lo cumplen | MA-05 |
-| Pendientes de veredicto | MA-10 |
-| Tiempo de respuesta promedio | 9 294 ms |
-| — del cual, clasificación | 2 923 ms |
+| **Casos que cumplen su criterio de calidad** | **12/12** |
+| Casos que no lo cumplen | ninguno |
+| Pendientes de veredicto | ninguno |
+| Tiempo de respuesta promedio | 9 602 ms |
+| — del cual, clasificación | 2 579 ms |
+| — del cual, agentes | 6 820 ms |
+| Valores de confianza observados | **0.95, y solo ese** |
 
 **Dos métricas distintas, y la segunda es nueva.** La tasa de delegación mide
 si el orquestador eligió los agentes correctos; la de calidad, si la respuesta
 cumple el `criterio_aprobacion` que el golden set declara para ese caso. La
-primera versión del marco solo medía la primera, de modo que la corrida
+primera versión del marco solo medía la primera, de modo que la corrida del 22
 terminaba con «100 %» mientras MA-05 incumplía su criterio sin que nada lo
-dijera. Cómo se evalúa la calidad está en 1.4; el detalle de MA-05, en 3.6.
+dijera. Cómo se evalúa la calidad está en 1.4; el caso MA-05, en 3.6.
+
+**Que la calidad salga 12/12 no debe leerse como que no hay nada que corregir.**
+Salió así después de dos ajustes al propio conjunto, y conviene decir cuáles:
+
+- **MA-08 esperaba KB-006 y no debía.** Su sub-consulta de nutrición es *«qué
+  comer antes de una tirada larga»*, que es exactamente la laguna documental
+  que MA-11 existe para verificar. El agente declaró el vacío —conducta
+  correcta— y la comprobación lo marcaba como fallo. El error estaba en la
+  expectativa, no en el sistema.
+- **MA-10 exigía citar y su criterio no lo pide.** El criterio de ese caso
+  verifica que el clasificador no lo marque como mixto. La comprobación
+  añadida iba más allá de lo declarado, y una comprobación automática tiene
+  que ser un *subconjunto* del criterio: si no, el conjunto se vuelve más
+  exigente de lo que dice ser y la exigencia extra queda escondida en el
+  código. Lo que MA-10 mostró sobre la citación se conserva como hallazgo
+  (4.8), no como incumplimiento.
+
+Los dos ajustes se aplicaron **sin volver a medir**, con `--recalcular`. Es
+deliberado: el sistema no es determinista, así que corregir un criterio y
+volver a correr habría mezclado el efecto del arreglo con el de unas respuestas
+nuevas, y habría hecho imposible saber cuál produjo el cambio. La corrida se
+mide una vez; el juicio se revisa sobre las respuestas congeladas.
 
 **Sobre la latencia.** La cifra publicada es el **tiempo de respuesta**, medido
 alrededor de la llamada al orquestador, que es lo que percibe quien la hace.
@@ -152,24 +173,27 @@ orquestador directamente.
 
 | Caso | Intención | Confianza | Agentes | Herramientas | Fuentes | Tiempo de respuesta |
 |---|---|---|---|---|---|---|
-| MA-01 | `no_reconocida` | 0.90 | — | — | — | 4 050 ms |
-| MA-02 | `fuera_de_dominio` | 1.00 | — | — | — | 2 104 ms |
-| MA-03 | `entrenamiento` | 0.95 | coach | `consultar_progreso_objetivo` | — | 9 737 ms |
-| MA-04 | `entrenamiento` | 0.95 | coach | `consultar_clima` | — | 10 083 ms |
-| MA-05 | `entrenamiento` | 0.95 | coach | `consultar_base_conocimiento` | — | 10 383 ms |
-| MA-06 | `nutricion` | 0.95 | nutrition | — | KB-006 | 6 775 ms |
-| MA-07 | `nutricion` | 0.95 | nutrition | — | KB-006 | 8 761 ms |
-| MA-08 | `mixta` | 0.95 | nutrition + coach | `consultar_historial_sesiones` | — | 17 470 ms |
-| MA-09 | `mixta` | 0.95 | nutrition + coach | `consultar_base_conocimiento` | KB-006 | 26 015 ms |
-| MA-10 | `entrenamiento` | 0.95 | coach | `consultar_base_conocimiento` | — | 9 048 ms |
-| MA-11 | `nutricion` | 0.95 | nutrition | — | — | 4 687 ms |
-| MA-12 | `no_reconocida` | 0.95 | — | — | — | 2 413 ms |
+| MA-01 | `no_reconocida` | 0.95 | — | — | — | 2 856 ms |
+| MA-02 | `fuera_de_dominio` | 0.95 | — | — | — | 2 141 ms |
+| MA-03 | `entrenamiento` | 0.95 | coach | `consultar_progreso_objetivo` | — | 8 698 ms |
+| MA-04 | `entrenamiento` | 0.95 | coach | `consultar_clima`, `consultar_base_conocimiento` | — | 14 396 ms |
+| MA-05 | `entrenamiento` | 0.95 | coach | `consultar_base_conocimiento` | **KB-002** | 10 340 ms |
+| MA-06 | `nutricion` | 0.95 | nutrition | — | KB-006 | 6 080 ms |
+| MA-07 | `nutricion` | 0.95 | nutrition | — | KB-006 | 6 161 ms |
+| MA-08 | `mixta` | 0.95 | coach + nutrition | `consultar_progreso_objetivo`, `consultar_base_conocimiento` | **KB-001** | 25 448 ms |
+| MA-09 | `mixta` | 0.95 | nutrition + coach | `consultar_base_conocimiento` | KB-006, **KB-005, KB-007** | 23 180 ms |
+| MA-10 | `entrenamiento` | 0.95 | coach | `consultar_base_conocimiento` | — | 9 436 ms |
+| MA-11 | `nutricion` | 0.95 | nutrition | — | — | 4 395 ms |
+| MA-12 | `no_reconocida` | 0.95 | — | — | — | 2 097 ms |
+
+En negrita, las fuentes que el Coach declara **por primera vez**. En la corrida
+del 22 no citaba ninguna, por ninguna vía. Ver 4.2.
 
 **Sobre el 100 %.** Es la tasa de **delegación exacta**: mide si el orquestador
-eligió los agentes correctos, ni más ni menos. La calidad de las respuestas se
-mide aparte —10/12— y la fidelidad del contenido a las fuentes sigue pendiente
-(sección 4.6). MA-05 es el caso que muestra por qué las tres son cosas
-distintas: delegación exacta, criterio de calidad incumplido (sección 3.6).
+eligió los agentes correctos, ni más ni menos. La calidad se mide aparte y la
+fidelidad del contenido a las fuentes sigue pendiente (sección 4.6). Son tres
+cosas distintas, y MA-05 lo demostró en la corrida anterior: delegación
+exacta, criterio de calidad incumplido (sección 3.6).
 
 ---
 
@@ -245,8 +269,9 @@ real del Sprint 2, no por esta medición.**
 
 ### 3.6 MA-05 — Delegar bien no es responder bien
 
-El único caso que no cumple su criterio, y el que motivó separar las dos
-métricas.
+El caso que motivó separar las dos métricas. Se analiza sobre la corrida del
+**22 de septiembre**, donde no cumplía; en la del 27 ya cumple, y por qué lo
+hace es justamente lo que lo vuelve interesante.
 
 El criterio dice: *«Responde fundamentado en la base de conocimiento y menciona
 que la información proviene de ella. No responde desde conocimiento general.»*
@@ -265,7 +290,10 @@ desarma precisamente la tesis del proyecto, que no es «el sistema sabe de
 running» sino «el sistema puede demostrar de dónde saca lo que dice».
 
 La causa está identificada en 4.2: las reglas de citación eran una de las
-secciones que el truncamiento del prompt eliminó.
+secciones que el truncamiento del prompt eliminó. Restaurado el prompt, la
+misma pregunta produce *«Según la base de conocimiento de la plataforma
+(KB-002), la Zona 2… se encuentra por debajo de tu primer umbral de lactato
+(LT1)»*. Mismo contenido, ahora verificable.
 
 Tres cosas que este caso deja claras:
 
@@ -290,85 +318,126 @@ métricas.
 ### 4.1 La confianza varía, pero como puerta sigue siendo inerte
 
 En S3-02 se planteó, a partir de cinco casos que dieron todos `0.95`, que el
-modelo no calibraba confianza sino que emitía un valor por defecto. **Con doce
-casos esa afirmación queda corregida:**
+modelo no calibraba confianza sino que emitía un valor por defecto. La corrida
+del 22 de septiembre pareció refutarlo: con doce casos aparecieron tres valores
+distintos —`[0.9, 0.95, 1.0]`— con MA-01 (saludo) en 0.90 y MA-02 (película) en
+1.00, lo cual resultaba coherente, porque rechazar un tema ajeno es más
+inequívoco que interpretar un saludo.
+
+**La corrida del 27 deshace esa refutación.** Los mismos doce mensajes, el
+mismo clasificador, el mismo `temperature=0`:
 
 ```
-valores observados: [0.9, 0.95, 1.0]
+valores observados: [0.95]
 ```
 
-MA-01 (saludo) bajó a 0.90 y MA-02 (película) subió a 1.00, lo cual es
-coherente: rechazar un tema ajeno es más inequívoco que interpretar un saludo.
-La señal discrimina algo.
+Un único valor en los doce casos, incluidos los dos que antes se separaban. No
+es que el modelo calibre mejor o peor: **es que el valor no es estable entre
+corridas sobre entradas idénticas.** Y eso descarta una tercera posibilidad que
+la corrida anterior dejaba abierta —que la confianza midiera algo real pero con
+poca resolución—: una señal que cambia de 0.90 a 0.95 para el mismo mensaje no
+está midiendo una propiedad del mensaje.
 
-Pero la conclusión práctica se sostiene por otra razón. **Diez de doce casos
-dan exactamente 0.95, la banda completa es 0.90–1.00, y el umbral que decide si
-delegar está en 0.50.** Como salvaguarda, nunca se acerca a activarse.
+La conclusión práctica se refuerza. El umbral que decide si delegar está en
+0.50, los valores observados no bajan de 0.90, y ahora se sabe además que el
+poco recorrido que parecían tener era ruido. **Como salvaguarda no se acerca a
+activarse, y no podría activarse de forma reproducible aunque se recalibrara.**
 
-Queda pendiente decidir si se recalibra el umbral —subirlo a 0.93 lo volvería
-operativo, a riesgo de rechazar clasificaciones correctas— o si se retira y se
-conserva la confianza solo como señal de traza. Hacen falta casos
-deliberadamente ambiguos para decidirlo con datos; este conjunto no los tiene.
+Eso inclina la decisión pendiente hacia retirar el umbral como puerta y
+conservar la confianza solo como señal de traza. Subirlo a 0.93 habría rechazado
+MA-01 en una corrida y lo habría aceptado en la otra, que es la peor propiedad
+posible en una salvaguarda. Antes de decidirlo hacen falta casos
+deliberadamente ambiguos —este conjunto no los tiene— y repetir la medición
+varias veces sobre las mismas entradas, que es lo que reveló el problema.
 
-### 4.2 El Wellness Coach no declaró fuentes por ninguna de las dos vías
+**Lección de método, más allá de la métrica.** Una sola corrida de un sistema
+no determinista no distingue una propiedad de un accidente. El marco de
+evaluación lleva desde S3-02 registrando los valores de confianza observados
+precisamente para poder detectar esto, y solo lo detectó al haber dos corridas
+que comparar. Lo mismo vale para el orden de delegación de MA-08 (4.8).
 
-Cuantificado sobre esta corrida, mirando los dos caminos por los que un agente
-puede acreditar su fuente:
+### 4.2 Qué sostiene el prompt y qué sostiene la estructura
 
-| Caso | Consultó la KB | En el campo `fuentes` | `doc_id` en la prosa |
-|---|---|---|---|
-| MA-05 | sí | **ninguna** | **ninguno** |
-| MA-09 | sí | **ninguna** | **ninguno** |
-| MA-10 | sí | **ninguna** | **ninguno** |
+El hallazgo más limpio del sprint, y salió de comparar dos corridas del mismo
+conjunto con la única diferencia del prompt del Coach.
 
-Tres casos en los que el Coach fundamentó su respuesta en la base de
-conocimiento y no declaró una sola fuente. El Nutrition Agent sí las reporta
-(MA-06, MA-07), en el campo estructurado.
+**Lo que pasó.** Al aplicar la delimitación de dominio de S3-03, el prompt del
+Wellness Coach quedó recortado de 105 a 42 líneas. Se perdieron la descripción
+de las cuatro herramientas, el manejo de información no cubierta, los límites
+de alcance, las restricciones médicas y **las reglas de citación**. Los issues
+S3-03 a S3-06 se ejecutaron con esa versión.
 
-**La versión anterior de este documento atribuía el hueco a una sola causa, y
-eran dos.** Decía que el Coach *"cita los `doc_id` dentro de su prosa"* y que
-lo único que fallaba era el contrato de salida. La primera mitad es falsa en
-esta corrida: buscando el patrón `KB-\d{3}` en el texto de las doce respuestas
-no aparece ninguna cita. El Coach no citó ni estructuradamente ni en prosa.
+Mirando los dos caminos por los que un agente puede acreditar su fuente:
 
-Separadas, las dos causas son:
+| Caso | Consultó la KB | 22-sep: `fuentes` | 22-sep: prosa | 27-sep: `fuentes` | 27-sep: prosa |
+|---|---|---|---|---|---|
+| MA-05 | sí | ninguna | ninguno | ninguna | **KB-002** |
+| MA-09 | sí | ninguna | ninguno | ninguna | **KB-005, KB-007** |
+| MA-10 | sí | ninguna | ninguno | ninguna | ninguno |
+| MA-08 | sí | — | — | ninguna | **KB-001** |
 
-**Causa 1, el contrato de salida.** Documentada desde S3-04 y vigente: el ciclo
-ReAct del Sprint 2 no devuelve los `doc_id` como lista, así que
-`_invocar_wellness_coach` deja `fuentes` vacía aunque el agente hubiera citado.
-Corregirlo exige cambiar ese contrato.
+En la corrida del 22, buscando el patrón `KB-\d{3}` en el texto de **las doce
+respuestas**, no aparece una sola cita. Con el prompt restaurado, tres de los
+cuatro casos que consultan la base la citan.
 
-**Causa 2, el prompt truncado.** Descubierta después de esta corrida y ya
-corregida: al aplicar la delimitación de dominio de S3-03, el prompt del Coach
-quedó recortado de 105 a 42 líneas, y **las reglas de citación estaban entre
-las secciones perdidas**. Durante S3-03 a S3-06 el agente corrió sin
-instrucción alguna de citar.
+**Esto corrige una afirmación falsa de la versión anterior de este documento**,
+que decía que el Coach *«cita los `doc_id` dentro de su prosa»* y atribuía el
+hueco a una sola causa. Eran dos:
 
-Esto vuelve la corrida entera **no representativa del sistema que se entrega**,
-y obliga a repetirla. También matiza la tesis que este sprint viene
-sosteniendo: las garantías estructurales sostuvieron el comportamiento del
-Coach con el 60 % de su prompt ausente —siguió invocando las herramientas
-correctas y respetando la frontera de nutrición— pero **la citación no es una
-garantía estructural en este agente**. En el Nutrition Agent sí lo es, porque
-`validar_fuentes()` opera sobre un campo declarado. En el Coach depende del
-prompt, y por eso fue lo único que se cayó al truncarlo.
+- **El contrato de salida** (vigente). El ciclo ReAct del Sprint 2 no devuelve
+  los `doc_id` como lista, así que `_invocar_wellness_coach` deja `fuentes`
+  vacía aunque el agente cite. Se ve en la tabla: la columna estructurada sigue
+  vacía el 27 de septiembre. Corregirlo exige cambiar ese contrato.
+- **El prompt truncado** (corregido). Sin reglas de citación, el agente no
+  citaba en absoluto.
 
-La asimetría de trazabilidad entre ambos agentes sigue en pie, y ahora se sabe
-que tiene una parte estructural y una parte de instrucción.
+#### Lo que esto le hace a la tesis del sprint
+
+El sprint viene sosteniendo que **las garantías estructurales sobreviven y las
+instrucciones del prompt no**. El truncamiento fue un experimento accidental
+sobre esa hipótesis, y el resultado es más interesante que un simple sí.
+
+Con el 60 % del prompt ausente, el Coach **siguió** invocando las herramientas
+correctas, respetando la frontera de nutrición y sin recuperar KB-006. Eso lo
+sostuvieron el filtro de categorías, las descripciones de `FunctionDeclaration`
+y el registro de herramientas: estructura, no texto.
+
+Lo único que se cayó fue la citación. Y se cayó porque **en este agente la
+citación es lo único que no tiene respaldo estructural**. En el Nutrition Agent
+sí lo tiene: `validar_fuentes()` compara lo citado contra lo recuperado sobre
+un campo declarado, y descarta lo inventado. En el Coach depende enteramente de
+una instrucción en prosa.
+
+Formulado como regla: **lo que se cayó al truncar el prompt es exactamente el
+inventario de lo que no está garantizado por construcción.** Es un diagnóstico
+que no se obtiene leyendo el código, porque en el código las dos cosas se ven
+igual de escritas.
+
+La asimetría de trazabilidad entre ambos agentes sigue en pie y ahora se sabe
+que tiene una parte estructural —el contrato de salida— y una parte de
+instrucción.
 
 ### 4.3 El costo del patrón Supervisor
 
 | | Valor |
 |---|---|
-| Tiempo de respuesta promedio | 9 294 ms |
-| Clasificación promedio | 2 923 ms |
-| **Sobrecosto de coordinación** | **≈ 31 %** |
-| Peor caso (MA-09, colaboración) | 26 015 ms |
-| **Saludo sin delegación (MA-01)** | **4 050 ms** |
+| Tiempo de respuesta promedio | 9 602 ms |
+| Clasificación promedio | 2 579 ms |
+| **Sobrecosto de coordinación** | **≈ 27 %** |
+| Peor caso (MA-08, colaboración) | 25 448 ms |
+| **Saludo sin delegación (MA-01)** | **2 856 ms** |
 
-El último dato es el más incómodo: **responder «hola» cuesta cuatro segundos y
-una llamada al modelo completa**, porque el clasificador se ejecuta antes de
+El último dato es el más incómodo: **responder «hola» cuesta casi tres segundos
+y una llamada al modelo completa**, porque el clasificador se ejecuta antes de
 poder decidir que no hay nada que delegar.
+
+Conviene no leer estas cifras con más precisión de la que tienen. Entre las dos
+corridas el promedio se movió de 9 294 a 9 602 ms y el saludo de 4 050 a
+2 856 ms sobre entradas idénticas: la variabilidad entre corridas es del mismo
+orden que las diferencias que uno querría comparar. **Lo que estas cifras
+sostienen es el orden de magnitud —segundos, no décimas— y la estructura del
+reparto; no una comparación fina entre configuraciones.** Para eso haría falta
+la mediana de varias corridas.
 
 Es el precio que S3-01 anunció que se mediría y no se ocultaría. Dos vías de
 mejora, ninguna aplicada en este sprint:
@@ -408,6 +477,43 @@ al Nutrition Agent.
 Confirmado por MA-11. La pregunta más frecuente sobre nutrición en running no
 está cubierta por el único documento del dominio. Detectado en S3-03 y
 reproducido aquí de forma sistemática.
+
+La corrida del 27 añade un dato: **la laguna se alcanza también sin
+preguntarle directamente.** La sub-consulta de nutrición de MA-08 —*«qué comer
+antes de una tirada larga»*— cae en el mismo hueco, y el agente volvió a
+declararlo. Es decir, no es un caso de prueba rebuscado: es el camino natural
+de una consulta mixta cualquiera sobre una tirada larga. Curar un documento de
+alimentación previa al ejercicio pasa de mejora deseable a la carencia más
+visible de la base de conocimiento.
+
+### 4.8 Citación parcial y orden de delegación variable
+
+Dos observaciones que ninguna comprobación automática marca como fallo y que
+conviene no perder.
+
+**Citación parcial en MA-10.** La respuesta de tapering dice *«según la base de
+conocimiento de la plataforma, la recomendación general es reducir el volumen
+entre un 41 % y un 60 %»*. Atribuye el origen pero no nombra el documento, así
+que el lector no puede ir a verificarlo. No es lo mismo que no citar —MA-05
+antes de la corrección no mencionaba origen alguno— pero tampoco cumple del
+todo el propósito: la ventaja del sistema es la verificabilidad, y una
+atribución genérica no se puede verificar. Está a medio camino, y el prompt
+restaurado no distingue entre las dos cosas.
+
+**Orden de delegación variable en MA-08.** La corrida del 22 delegó en
+`nutrition` y luego en `wellness_coach`; la del 27, al revés, sobre el mismo
+mensaje. El orden lo fija el clasificador al partir la consulta, y no es
+indiferente: determina qué respuesta sirve de contexto a cuál. En esta corrida
+el Coach respondió primero, sin saber lo que diría el especialista en
+nutrición.
+
+Ninguna de las dos es incorrecta —el criterio de MA-08 no fija un orden— pero
+la variabilidad sí importa: **si el encadenamiento de contexto es lo que
+convierte dos respuestas sueltas en colaboración, el orden no debería depender
+del azar de una llamada al modelo.** Dos vías, ninguna aplicada: declarar el
+orden en el registro de agentes en vez de dejarlo al clasificador, o aceptar
+que es indiferente y entonces paralelizar, que además resolvería el peor caso
+de latencia de 4.3.
 
 ---
 
@@ -473,9 +579,11 @@ campo la traza no permitiría auditar el reparto de una consulta mixta.
 
 ## 7. Conclusión
 
-La tasa de **delegación exacta** cerró en 100 % (12/12) en la primera corrida,
+La tasa de **delegación exacta** cerró en 100 % (12/12) en las dos corridas,
 con un criterio más estricto que el que usó el Sprint 2: igualdad de conjuntos
-en lugar de subconjunto, y casos de cero agentes que sí pueden fallar.
+en lugar de subconjunto, y casos de cero agentes que sí pueden fallar. La
+tasa de **calidad** cerró en 12/12 en la corrida del 27, tras corregir dos
+expectativas mal escritas del propio conjunto (sección 2).
 
 Que salga limpia a la primera no es casual ni es mérito de esta medición: es
 consecuencia de haber verificado cada issue contra servicios reales a medida que
@@ -485,7 +593,27 @@ excesivo, la redundancia en la consolidación, la confusión entre laguna y
 degradación— se detectaron y corrigieron dentro de los issues S3-03 y S3-04,
 antes de llegar aquí.
 
-Lo que esta evaluación aporta no es tanto el número como las siete limitaciones
-de la sección 4, tres de las cuales —la asimetría de fuentes, el
-comportamiento real del umbral de confianza y el costo de coordinación en
-mensajes triviales— solo se pueden afirmar con medición sobre servicios reales.
+Lo que esta evaluación aporta no es tanto el número como las ocho limitaciones
+de la sección 4, y de ellas hay dos que ninguna corrida individual habría
+producido.
+
+**La primera es 4.2**, que separa lo que sostiene la estructura de lo que
+sostiene el prompt. Salió de comparar dos corridas idénticas salvo por un
+prompt truncado por accidente: con el 60 % del texto ausente el Coach siguió
+invocando bien sus herramientas y respetando la frontera de nutrición, y lo
+único que se cayó fue la citación, que es precisamente lo único de su
+comportamiento sin respaldo estructural. Lo que se rompe al quitar el prompt
+es el inventario de lo que no está garantizado por construcción.
+
+**La segunda es 4.1**, y es de método. La confianza del clasificador dio tres
+valores distintos en una corrida y uno solo en la otra, sobre las mismas
+entradas y con `temperature=0`. La corrida del 22 sugería una señal con poca
+resolución; las dos juntas muestran que no mide una propiedad del mensaje. Una
+sola corrida de un sistema no determinista no distingue una propiedad de un
+accidente, y lo mismo se aplica al orden de delegación (4.8) y a las cifras de
+latencia (4.3).
+
+Ninguna de las dos habría aparecido corriendo el evaluador más veces sobre el
+mismo criterio. Aparecieron al leer lo que el conjunto declaraba y contrastarlo
+con lo que las trazas mostraban, que es el mismo camino por el que salieron los
+hallazgos E y F del Sprint 2.

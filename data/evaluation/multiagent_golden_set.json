@@ -118,9 +118,7 @@
         "herramientas_requeridas": [
           "consultar_base_conocimiento"
         ],
-        "fuentes_esperadas": [
-          "KB-006"
-        ]
+        "cita_fuentes": true
       }
     },
     {
@@ -151,8 +149,7 @@
       "comprobaciones": {
         "herramientas_requeridas": [
           "consultar_base_conocimiento"
-        ],
-        "cita_fuentes": true
+        ]
       }
     },
     {

@@ -70,8 +70,27 @@ USO
 
     python -m scripts.evaluation.seed_agent_test_user
     python -u -m scripts.evaluation.evaluate_multiagent
+
+    python -m scripts.evaluation.evaluate_multiagent --recalcular
+
+RECALCULAR SIN VOLVER A MEDIR
+
+La segunda forma vuelve a juzgar los resultados ya guardados sin invocar a
+ningun agente. No es un atajo para ahorrar llamadas: es lo que mantiene
+separada la MEDICION del JUICIO.
+
+El sistema no es determinista, asi que cada corrida produce respuestas
+distintas. Si corregir un criterio mal escrito obligara a volver a medir, la
+corrida nueva vendria con respuestas nuevas y seria imposible saber si el
+cambio de veredicto vino de arreglar el criterio o de que el modelo contesto
+otra cosa. Peor: invita a repetir hasta que salga bien.
+
+Recalcular congela las respuestas medidas y aplica sobre ellas el criterio
+corregido. La corrida se mide una vez; el juicio se puede revisar las veces
+que haga falta.
 """
 
+import argparse
 import json
 import re
 import time
@@ -415,6 +434,56 @@ def main() -> None:
             detalle = resultado["calidad"]["comprobaciones_automaticas"][nombre]
             print(f"       calidad: falla '{nombre}' -> {detalle}")
 
+    _guardar_y_reportar(resultados)
+
+
+def recalcular() -> None:
+    """Vuelve a juzgar los resultados guardados sin invocar a ningun agente.
+
+    Reconstruye para cada caso la parte de la traza que la evaluacion de
+    calidad necesita -- respuesta, fuentes, herramientas -- a partir de lo que
+    ya se guardo, y le aplica el golden set y los veredictos manuales
+    actuales.
+
+    Lo que NO se recalcula: la delegacion, las latencias y la clasificacion.
+    Son observaciones de la corrida, no juicios, y reinterpretarlas seria
+    reescribir la medicion.
+    """
+    guardado = json.loads(RESULTADOS_PATH.read_text(encoding="utf-8"))
+    golden = json.loads(GOLDEN_SET_PATH.read_text(encoding="utf-8"))
+    manual = cargar_calidad_manual()
+
+    casos_por_id = {c["id"]: c for c in golden["casos"]}
+
+    resultados = []
+    for r in guardado["resultados"]:
+        caso = casos_por_id.get(r["id"])
+        if caso is None:
+            print(f"  Aviso: {r['id']} ya no esta en el golden set. Se conserva tal cual.")
+            resultados.append(r)
+            continue
+
+        traza_parcial = {
+            "respuesta": r["respuesta"],
+            # 'fuentes' quedo guardado como el desglose de fuentes_observadas.
+            # Se vuelve a la forma de traza para no duplicar la logica de
+            # extraccion, que es la que define que cuenta como cita.
+            "fuentes": r["fuentes"]["en_traza"] if isinstance(r["fuentes"], dict) else r["fuentes"],
+            "herramientasInvocadas": r["herramientas_invocadas"],
+        }
+        fuentes = fuentes_observadas(traza_parcial)
+
+        r = dict(r)
+        r["criterio_aprobacion"] = caso["criterio_aprobacion"]
+        r["fuentes"] = fuentes
+        r["calidad"] = _evaluar_calidad(caso, traza_parcial, fuentes, manual)
+        resultados.append(r)
+
+    print("Recalculado sobre las respuestas ya medidas. No se invoco a ningun agente.\n")
+    _guardar_y_reportar(resultados)
+
+
+def _guardar_y_reportar(resultados: list[dict]) -> None:
     metricas = calcular_metricas(resultados)
 
     RESULTADOS_PATH.write_text(
@@ -456,4 +525,16 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--recalcular",
+        action="store_true",
+        help=(
+            "Vuelve a juzgar la calidad de los resultados ya guardados sin "
+            "invocar a ningun agente. Sirve para corregir un criterio mal "
+            "escrito sin cambiar las respuestas medidas."
+        ),
+    )
+    argumentos = parser.parse_args()
+
+    recalcular() if argumentos.recalcular else main()
