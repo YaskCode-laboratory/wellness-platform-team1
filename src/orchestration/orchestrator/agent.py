@@ -32,6 +32,19 @@ solicitud" no exige correlacionar registros emitidos por varios agentes. La
 justificacion frente a Sequential, Hierarchical y Swarm esta en
 docs/architecture/multiagent-architecture.md, seccion 3.
 
+QUE AGREGA S3-04 SOBRE S3-02
+
+S3-02 dejo la coordinacion multidominio explicitamente fuera de alcance: el
+clasificador DETECTABA la intencion mixta y el orquestador la trataba como
+caso previsto, respondiendo que solo podia cubrir una parte. Reconocer no es
+atender, y la nota de aquel modulo insistia en no confundirlos.
+
+Este issue cierra esa brecha. Lo que antes faltaba y ahora existe: repartir la
+consulta en sub-consultas, delegar en mas de un agente, encadenar el contexto
+de uno al siguiente y consolidar varias respuestas en una. Un caso mixto ya no
+sale con delegado=False y agentes=[]; sale con los dos agentes en la traza y
+sus respuestas atribuidas.
+
 PREVENCION DE CICLOS (S3-04)
 
 Los agentes especializados no delegan: solo el orquestador lo hace, sobre una
@@ -119,12 +132,15 @@ class OrchestratorAgent:
         )
 
         plan = self._planificar(clasificacion, mensaje)
-        respuestas = self._ejecutar_plan(plan["delegaciones"], user_id, traza_id)
+        ejecutadas, respuestas = self._ejecutar_plan(
+            plan["delegaciones"], user_id, traza_id
+        )
 
         traza = self._componer(
             traza_id=traza_id,
             clasificacion=clasificacion,
             plan=plan,
+            ejecutadas=ejecutadas,
             respuestas=respuestas,
             latencia_clasificacion=latencia_clasificacion,
             latencia_total=round((time.perf_counter() - inicio) * 1000),
@@ -216,14 +232,32 @@ class OrchestratorAgent:
 
     def _ejecutar_plan(
         self, delegaciones: list[dict], user_id: str, traza_id: str
-    ) -> list[RespuestaAgente]:
+    ) -> tuple[list[dict], list[RespuestaAgente]]:
         """Invoca a los agentes del plan en orden, encadenando el contexto.
 
         Cada agente recibe su parte de la consulta y lo que respondio el
         anterior, para que complemente en vez de repetir. El orden lo fija el
         clasificador: primero el dominio cuya respuesta sirve de contexto al
         siguiente.
+
+        POR QUE DEVUELVE TAMBIEN LAS DELEGACIONES EJECUTADAS
+
+        Porque no tienen por que ser las planificadas. La guarda contra
+        repeticion puede omitir una, y entonces el plan y las respuestas dejan
+        de tener la misma longitud.
+
+        Antes se devolvian solo las respuestas y _componer() reconstruia el
+        mensaje entregado indexando el PLAN por la posicion de la RESPUESTA
+        (delegaciones[i - 1]). Con una omision intermedia, ese indice se
+        desplaza y la traza atribuye a un agente un mensaje que nunca recibio.
+        Una traza equivocada es peor que una traza ausente: se lee como
+        evidencia. Y era doblemente grave porque solo ocurria cuando actuaba
+        una proteccion, que es justo cuando hace falta poder auditar.
+
+        Devolviendo las delegaciones efectivamente ejecutadas, ambas listas
+        quedan alineadas por construccion y la traza no puede desfasarse.
         """
+        ejecutadas: list[dict] = []
         respuestas: list[RespuestaAgente] = []
         invocados: set[str] = set()
         contexto = ""
@@ -257,20 +291,61 @@ class OrchestratorAgent:
             t0 = time.perf_counter()
             respuesta = self._delegar(agente, solicitud)
             respuesta.latencia_ms = round((time.perf_counter() - t0) * 1000)
+
+            ejecutadas.append(delegacion)
             respuestas.append(respuesta)
 
             logger.info(
-                "[%s] paso=%d agente=%s degradado=%s latencia=%dms",
+                "[%s] paso=%d agente=%s degradado=%s fallo=%s latencia=%dms",
                 traza_id,
                 paso,
                 nombre,
                 respuesta.degradado,
+                respuesta.fallo,
                 respuesta.latencia_ms,
             )
 
-            contexto = f"{agente['titulo']} respondió:\n{respuesta.texto}"
+            contexto = self._contexto_para_el_siguiente(agente, respuesta)
 
-        return respuestas
+        return ejecutadas, respuestas
+
+    @staticmethod
+    def _contexto_para_el_siguiente(agente: dict, respuesta: RespuestaAgente) -> str:
+        """Prepara lo que el siguiente agente recibira del anterior.
+
+        UN FALLO NO SE ENCADENA COMO SI FUERA UNA RESPUESTA
+
+        Cuando un agente falla, _delegar() devuelve una RespuestaAgente cuyo
+        'texto' es RESPUESTA_AGENTE_FALLO: un mensaje del orquestador dirigido
+        al corredor, no contenido de dominio. Encadenarlo con la formula
+        habitual producia "Wellness Coach Agent respondió: No pude completar tu
+        consulta...", y mensaje_con_contexto() se lo entrega al siguiente
+        agente pidiendole que lo COMPLEMENTE y no lo CONTRADIGA.
+
+        El efecto es doble y ninguno es bueno: el segundo agente trata un
+        mensaje de error como aportacion de un especialista, y puede acabar
+        disculpandose por algo que no le corresponde o evitando un tema que el
+        primero nunca llego a cubrir. Ademas invierte el sentido de la
+        degradacion: S3-01 la definio como conservar lo que si funciono, y asi
+        el fallo de uno contaminaba al otro.
+
+        Se declara explicitamente que el especialista anterior no produjo
+        informacion utilizable. El siguiente agente conserva el dato de que
+        hubo un paso previo -- que es lo que evita respuestas incoherentes con
+        el flujo -- sin recibir un error disfrazado de contenido.
+
+        'degradado' no basta para decidir esto: un Coach que respondio bien
+        pero no pudo consultar el clima viene degradado y su texto SI es
+        contexto util. El discriminante es 'fallo'.
+        """
+        if respuesta.fallo:
+            return (
+                f"{agente['titulo']} no pudo completar su parte por un problema "
+                f"tecnico y no aporto informacion de su dominio. No supongas lo "
+                f"que habria dicho ni respondas por el: limitate a tu "
+                f"especialidad."
+            )
+        return f"{agente['titulo']} respondió:\n{respuesta.texto}"
 
     def _delegar(self, agente: dict, solicitud: SolicitudAgente) -> RespuestaAgente:
         """Invoca a un agente sin dejar que un fallo suyo tumbe la solicitud.
@@ -297,22 +372,33 @@ class OrchestratorAgent:
                 agente=agente["nombre"],
                 texto=RESPUESTA_AGENTE_FALLO,
                 degradado=True,
+                # Unico lugar del sistema que marca 'fallo'. Distingue "no
+                # produjo nada" de "produjo algo con una capacidad caida", y
+                # de ello depende que este texto se encadene o no al siguiente
+                # agente: ver _contexto_para_el_siguiente().
+                fallo=True,
                 detalle={"error": "el agente no pudo completar la solicitud"},
             )
 
     # ── Consolidacion ────────────────────────────────────────────────────────
 
-    def _consolidar(self, delegaciones: list[dict], respuestas: list[RespuestaAgente]) -> str:
+    def _consolidar(self, ejecutadas: list[dict], respuestas: list[RespuestaAgente]) -> str:
         """Une las respuestas de los agentes en un solo texto, sin reescribirlas.
 
         Con un agente, su texto tal cual. Con varios, cada respuesta bajo una
         etiqueta que indica quien la aporto. No se parafrasea ni se resume:
         ver la nota sobre trazabilidad en el docstring del modulo.
+
+        Recibe las delegaciones EJECUTADAS y no las planificadas. Aqui las
+        etiquetas se buscan por nombre de agente, asi que un desfase no
+        produciria una atribucion incorrecta, pero tomar el plan como si fuera
+        lo ocurrido es la misma confusion que causo el defecto de la traza.
+        Una sola fuente de verdad sobre lo que paso.
         """
         if len(respuestas) == 1:
             return respuestas[0].texto
 
-        etiquetas = {d["agente"]["nombre"]: d["agente"]["etiqueta"] for d in delegaciones}
+        etiquetas = {d["agente"]["nombre"]: d["agente"]["etiqueta"] for d in ejecutadas}
         bloques = [
             f"**{etiquetas.get(r.agente, r.agente)}**\n{r.texto}" for r in respuestas
         ]
@@ -325,6 +411,7 @@ class OrchestratorAgent:
         traza_id: str,
         clasificacion: Clasificacion,
         plan: dict,
+        ejecutadas: list[dict],
         respuestas: list[RespuestaAgente],
         latencia_clasificacion: int,
         latencia_total: int,
@@ -334,19 +421,29 @@ class OrchestratorAgent:
         La traza responde las preguntas que S3-06 necesita poder contestar
         sobre cualquier solicitud: que se entendio, a quien se delego, en que
         orden, que se le pidio a cada agente, que consulto y cuanto costo.
+
+        Los pasos se construyen a partir de 'ejecutadas', no de
+        plan["delegaciones"]: es lo que garantiza que mensajeDelegado sea el
+        mensaje que ese agente recibio de verdad. Ver _ejecutar_plan().
         """
         delegado = bool(respuestas)
         nombres = [r.agente for r in respuestas]
-        delegaciones = plan["delegaciones"]
+
+        # Invariante del que depende toda la traza. Si se rompe, cada paso
+        # queda atribuido al agente equivocado, y eso se lee como evidencia.
+        assert len(ejecutadas) == len(respuestas), (
+            "las delegaciones ejecutadas y las respuestas deben ir emparejadas"
+        )
 
         pasos = [
             {
                 "paso": i,
                 "agente": r.agente,
-                "mensajeDelegado": delegaciones[i - 1]["mensaje"],
+                "mensajeDelegado": ejecutadas[i - 1]["mensaje"],
                 "herramientasInvocadas": r.herramientas_invocadas,
                 "fuentes": r.fuentes,
                 "degradado": r.degradado,
+                "fallo": r.fallo,
                 "latenciaMs": r.latencia_ms,
                 "detalle": r.detalle,
             }
@@ -360,7 +457,7 @@ class OrchestratorAgent:
             "trazaId": traza_id,
             "generadoEn": datetime.now(timezone.utc).isoformat(),
             "respuesta": (
-                self._consolidar(delegaciones, respuestas) if delegado else plan["texto"]
+                self._consolidar(ejecutadas, respuestas) if delegado else plan["texto"]
             ),
             "delegado": delegado,
             "colaboracion": len(respuestas) > 1,

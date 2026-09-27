@@ -10,3 +10,10 @@ chromadb==0.5.23
 pyyaml==6.0.2
 requests>=2.33.0,<3.0.0
 
+# Lo necesita fastapi.testclient, que usa la suite desde S3-02 para probar el
+# endpoint del orquestador. Hoy llega igualmente como dependencia transitiva
+# de chromadb y firebase-admin; se declara aparte porque las pruebas dependen
+# de el directamente y una dependencia transitiva puede desaparecer al
+# actualizar quien la arrastra, dejando el CI roto por una razon invisible.
+httpx>=0.27,<1.0
+
