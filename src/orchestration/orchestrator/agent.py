@@ -25,12 +25,30 @@ solicitud" no exige correlacionar registros emitidos por varios agentes. La
 justificacion completa frente a Sequential, Hierarchical y Swarm esta en
 docs/architecture/multiagent-architecture.md, seccion 3.
 
-ALCANCE DE S3-02
+ALCANCE DE S3-02: LA COORDINACION MULTIDOMINIO NO ESTA IMPLEMENTADA
 
-Se delega a lo sumo en un agente por solicitud. La intencion "mixta", que
-requiere combinar dos dominios, se reconoce y se responde con honestidad pero
-todavia no se atiende: la delegacion multiple y la consolidacion de respuestas
-corresponden a S3-04.
+Conviene no confundir reconocer con atender.
+
+Lo que S3-02 entrega: el clasificador DETECTA la intencion "mixta" y la
+distingue de las demas, y el orquestador la trata como un caso previsto --
+responde declarando que solo puede cubrir una parte (RESPUESTA_MIXTA_NO_
+SOPORTADA) en vez de adivinar un dominio o fallar.
+
+Lo que S3-02 NO entrega: delegar en mas de un agente, repartir la consulta en
+sub-consultas, encadenar el contexto de un agente al siguiente y consolidar
+varias respuestas en una. Eso es el issue S3-04 completo, y sin ello una
+pregunta mixta se queda a medias por diseno, no por un fallo.
+
+La distincion importa al leer la traza: un caso mixto en S3-02 sale con
+delegado=False y agentes=[], y eso es el comportamiento correcto de este
+sprint, no una subdelegacion. Los diagramas 4.3 y 4.4 de
+docs/architecture/multiagent-architecture.md describen la arquitectura
+objetivo del sprint, que incluye la delegacion doble; a esta altura de la
+cadena todavia no existe.
+
+La limitacion esta fijada por la prueba
+test_mixta_se_reconoce_pero_no_se_atiende_todavia: si alguien la implementa a
+medias, la suite lo dice.
 """
 
 import logging
