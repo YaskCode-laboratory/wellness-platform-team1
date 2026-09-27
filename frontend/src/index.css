@@ -1,3 +1,134 @@
 @import "tailwindcss";
-@import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+
+/*
+  Animación del isotipo mientras el sistema multiagente responde.
+
+  Una consulta puede tardar veinte segundos o más —clasificación, agente y,
+  si colaboran, un segundo agente encadenado—, así que el indicador de espera
+  tiene que sostener la atención sin distraer.
+
+  El isotipo es una imagen estática, de modo que la carrera se simula con dos
+  movimientos combinados: la zancada, que sube y baja al corredor con una
+  inclinación mínima, y las estelas, que barren hacia atrás con desfase para
+  dar sensación de avance. Ninguna transforma el dibujo: si se deformara el
+  isotipo dejaría de ser la marca.
+*/
+
+@keyframes runcoach-zancada {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(1.5deg);
+  }
+}
+
+@keyframes runcoach-estela {
+  0% {
+    transform: translateX(4px) scaleX(0.3);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(-16px) scaleX(1);
+    opacity: 0;
+  }
+}
+
+.runcoach-zancada {
+  animation: runcoach-zancada 0.55s ease-in-out infinite;
+  transform-origin: 50% 80%;
+}
+
+.runcoach-estela {
+  animation: runcoach-estela 0.7s linear infinite;
+  transform-origin: right center;
+}
+
+/*
+  Destello del panel de traza al abrirse.
+
+  El panel aparece debajo del mensaje, fuera del punto donde estaba mirando
+  quien pulsó, así que sin una señal es fácil no darse cuenta de que se abrió.
+  Un destello que se apaga solo resuelve eso sin quedarse pidiendo atención:
+  se ejecuta una vez y desaparece.
+*/
+@keyframes runcoach-destello {
+  0% {
+    background-color: rgb(254 249 195);
+    border-color: rgb(250 204 21);
+  }
+  60% {
+    background-color: rgb(254 252 232);
+    border-color: rgb(253 224 71);
+  }
+  100% {
+    background-color: rgb(255 255 255);
+    border-color: rgb(229 231 235);
+  }
+}
+
+.runcoach-destello {
+  animation: runcoach-destello 1.4s ease-out 1;
+}
+
+/*
+  Variante para superficies que ya tienen color propio, como la tarjeta de
+  recomendación —cuyo fondo depende de la prioridad—. Destella con un anillo
+  en lugar del fondo: animar el fondo obligaría a terminar en un color fijo y
+  la tarjeta saltaría de golpe al suyo al acabar la animación.
+*/
+@keyframes runcoach-destello-anillo {
+  0% {
+    box-shadow: 0 0 0 3px rgb(250 204 21 / 0.9);
+  }
+  60% {
+    box-shadow: 0 0 0 3px rgb(250 204 21 / 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgb(250 204 21 / 0);
+  }
+}
+
+.runcoach-destello-anillo {
+  animation: runcoach-destello-anillo 1.4s ease-out 1;
+}
+
+/* Latido del texto de espera. Muy suave: acompaña al isotipo sin competir
+   con él, y una consulta puede tardar medio minuto en pantalla. */
+@keyframes runcoach-latido {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.runcoach-latido {
+  animation: runcoach-latido 1.6s ease-in-out infinite;
+}
+
+/* Respeta la preferencia del sistema: quien pide menos movimiento recibe un
+   latido suave en lugar de la carrera. */
+@media (prefers-reduced-motion: reduce) {
+  .runcoach-zancada {
+    animation: none;
+  }
+  .runcoach-estela {
+    animation: none;
+    opacity: 0.35;
+  }
+  .runcoach-latido {
+    animation: none;
+  }
+  .runcoach-destello,
+  .runcoach-destello-anillo {
+    animation: none;
+  }
+}
