@@ -5,9 +5,7 @@ import json
 import vertexai
 from vertexai.generative_models import GenerationConfig, GenerativeModel
 
-GCP_PROJECT = "runcoach-ai-496921"
-GCP_LOCATION = "us-central1"
-GEMINI_MODEL = "gemini-2.5-flash"
+from src.utils.config import GCP_LOCATION, GCP_PROJECT, GEMINI_MODEL
 
 _model = None
 

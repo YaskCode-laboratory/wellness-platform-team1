@@ -1,0 +1,265 @@
+{
+  "resultados": [
+    {
+      "id": "AG-01",
+      "tipo": "sin_herramientas",
+      "turnos": [
+        "Hola, buenos dias"
+      ],
+      "herramientas_esperadas": [],
+      "herramientas_invocadas": [],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Hola! Buenos días. ¿Cómo estás hoy? ¿En qué puedo ayudarte con tu entrenamiento?",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 2454
+    },
+    {
+      "id": "AG-02",
+      "tipo": "tool_calling",
+      "turnos": [
+        "Como voy con mi meta de esta semana?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_progreso_objetivo"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_progreso_objetivo",
+          "argumentos": {}
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Excelente pregunta! Mirando tus datos, veo que hasta ahora has corrido 14 km esta semana. Tu meta semanal es de 25 km, ¡así que ya llevas un 56% de tu objetivo completado!\n\n¡Vas por muy buen camino! ¿Hay algo en particular que te gustaría saber sobre cómo seguir adelante o alguna duda que tengas?",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 4331
+    },
+    {
+      "id": "AG-03",
+      "tipo": "tool_calling",
+      "turnos": [
+        "Hace mucho calor para salir a correr ahora mismo?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_clima"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_clima",
+          "argumentos": {}
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Hola! Veo que estás en Maracaibo. En este momento la temperatura es de 30.3°C, con vientos de 12.9 km/h y sin precipitaciones.\n\nSí, 30.3°C es bastante calorcito para salir a correr. Te sugiero que tomes precauciones si decides salir: hidrátate muy bien antes, durante y después, busca rutas con sombra si es posible, y considera bajar la intensidad o acortar la duración de tu carrera. Si sientes cualquier síntoma de mareo, náuseas o fatiga extrema, es mejor que pares.\n\nSi tienes alguna otra duda sobre cómo manejar el calor al correr, ¡solo dime!",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 6702
+    },
+    {
+      "id": "AG-04",
+      "tipo": "rag",
+      "turnos": [
+        "Que es el tapering y cuando deberia empezarlo antes de una carrera?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_base_conocimiento"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_base_conocimiento",
+          "argumentos": {
+            "consulta": "tapering y cuando empezarlo antes de una carrera"
+          }
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "Claro, te explico con gusto.\n\nSegún la base de conocimiento de la plataforma (KB-005), el *tapering* es un período antes de una carrera importante donde **se reduce significativamente el volumen de entrenamiento**, pero se mantiene la intensidad y la frecuencia. El objetivo es disipar la fatiga acumulada del entrenamiento, permitir que tu cuerpo se recupere completamente y llegue al día de la carrera fresco y con energía, sin perder la forma física.\n\nEn cuanto a cuándo deberías empezarlo, la duración óptima suele ser de **alrededor de 2 semanas (entre 8 y 14 días)**. Si lo extiendes demasiado, por ejemplo, más allá de dos semanas, podrías empezar a perder forma en lugar de beneficiarte de la recuperación.\n\nLa duración específica también depende de la distancia de la carrera:\n\n*   **5K**: 5 a 7 días\n*   **10K**: 7 a 10 días\n*   **Media maratón**: 10 a 14 días\n*   **Maratón**: 14 a 21 días (puede ser un poco más largo debido a la gran fatiga acumulada en su preparación).\n\nDurante el *tapering*, lo más importante es reducir el volumen de tus entrenamientos (aproximadamente entre un 41% y un 60%), pero **mantener la intensidad y la frecuencia** para no perder las adaptaciones logradas.\n\nEspero que esta información te sea muy útil para planificar tu próxima carrera. ¡Es clave para llegar al 100%!",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 10435
+    },
+    {
+      "id": "AG-05",
+      "tipo": "rag",
+      "turnos": [
+        "Me duele la rodilla derecha desde hace tres dias, que puede ser?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_base_conocimiento"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_base_conocimiento",
+          "argumentos": {
+            "consulta": "dolor de rodilla derecha desde hace tres días"
+          }
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "Gracias por la espera. He consultado la base de conocimiento de la plataforma y esto es lo que encuentro sobre el dolor de rodilla en corredores:\n\nEl dolor de rodilla es bastante común y puede deberse a varias razones, especialmente si eres corredor. Algunas de las lesiones por sobreuso más frecuentes que afectan la rodilla incluyen:\n\n*   **Síndrome de dolor patelofemoral:** Afecta la articulación entre la rótula y el fémur, y a menudo está asociado con un volumen de entrenamiento elevado o problemas en el control de la cadera.\n*   **Síndrome de la banda iliotibial:** La banda iliotibial es un tejido que va por el lateral del muslo hasta la rodilla. Su dolor suele relacionarse con el volumen de entrenamiento y la forma en que se mueven la cadera y la rodilla al correr.\n\nLa base de conocimiento también resalta algunas **señales de alerta** que indican que podría ser necesario reducir la carga de entrenamiento o buscar atención profesional:\n\n*   El dolor aparece antes en cada sesión de entrenamiento.\n*   El dolor persiste al día siguiente.\n*   El dolor está localizado en un punto muy específico, sobre todo si sientes que es en el hueso. Esto último merece atención especial por su posible relación con una fractura por estrés.\n\nDado que el dolor ha persistido durante tres días, es una buena idea prestarle atención. **Como te decía, no puedo darte un diagnóstico, pero mi recomendación principal es que consultes a un médico o fisioterapeuta.** Ellos podrán evaluar tu rodilla, determinar la causa exacta del dolor y recomendarte el tratamiento adecuado.\n\nMientras tanto, es importante no forzar la rodilla. ¿Has notado si el dolor empeora al correr o al realizar alguna actividad específica? ¿O si persiste al día siguiente de entrenar?",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 7302
+    },
+    {
+      "id": "AG-06",
+      "tipo": "memoria",
+      "turnos": [
+        "Llevo tres dias con dolor en la rodilla derecha al correr",
+        "Y si sigo entrenando igual esta semana, empeoraria?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_base_conocimiento"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_base_conocimiento",
+          "argumentos": {
+            "consulta": "dolor en la rodilla derecha al correr"
+          }
+        },
+        {
+          "nombre": "consultar_base_conocimiento",
+          "argumentos": {
+            "consulta": "¿Qué sucede si un corredor continúa entrenando con dolor de rodilla, específicamente con el dolor que ha descrito en los últimos tres días (dolor al correr en la rodilla derecha)? ¿Puede empeorar la lesión?"
+          }
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "Gracias por la espera. He consultado la base de conocimiento de la plataforma, y la información (KB-004) sugiere que continuar entrenando con dolor de rodilla, especialmente si presenta algunas de las señales de alerta que te mencioné antes (como dolor que aparece antes en cada sesión o persiste al día siguiente), **sí podría empeorar la situación**.\n\nLa base de conocimiento indica que estos son precisamente los indicadores que justifican reducir la carga de entrenamiento para evitar que un posible dolor o molestia se convierta en una lesión más seria y establecida.\n\nPor tu seguridad, y como te decía, lo más recomendable es escuchar a tu cuerpo. Si el dolor persiste al correr, sería prudente reducir la intensidad o incluso tomar un descanso. Como siempre, si el dolor es intenso o no mejora, un profesional de la salud es la mejor opción para un diagnóstico preciso.",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 14159
+    },
+    {
+      "id": "AG-07",
+      "tipo": "tool_calling",
+      "turnos": [
+        "Puedo hacer un entrenamiento fuerte hoy dado como voy esta semana y el clima?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_progreso_objetivo",
+        "consultar_clima"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_progreso_objetivo",
+          "argumentos": {}
+        },
+        {
+          "nombre": "consultar_clima",
+          "argumentos": {}
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Excelente pregunta! Veamos tu situación para ayudarte a decidir.\n\nPor un lado, llevas 14 km esta semana, y la semana pasada hiciste 5 km. Tu meta semanal es de 25 km, así que aún tienes margen para sumar kilómetros. Sin embargo, el aumento de kilómetros respecto a la semana pasada es considerable, y si tu entrenamiento fuerte es muy intenso o prolongado, podrías estar cargando el cuerpo un poco rápido.\n\nPor otro lado, el clima en Maracaibo para hoy registra una temperatura de 30.3°C y un viento de 12.9 km/h. ¡30 grados es bastante calor para un entrenamiento fuerte! Entrenar con altas temperaturas eleva el riesgo de deshidratación y golpes de calor, y generalmente el rendimiento baja.\n\nMi sugerencia es que, si decides hacer un entrenamiento fuerte, lo hagas con muchísima precaución. Considera las siguientes opciones:\n*   **Modera la intensidad o la duración:** Quizás no sea el día para tu entrenamiento más exigente. Podrías reducir un poco el ritmo o el tiempo.\n*   **Busca las horas más frescas:** Si es posible, entrena muy temprano por la mañana o ya al atardecer, cuando la temperatura baje un poco.\n*   **Hidratación es clave:** Asegúrate de beber mucha agua antes, durante y después del entrenamiento.\n*   **Escucha a tu cuerpo:** Si sientes que el calor te agobia o que la carga es demasiada, es mejor parar o bajar el ritmo. Siempre es preferible prevenir.\n\nDada la combinación del aumento de carga semanal y el calor, te aconsejaría ser especialmente prudente hoy. ¿Cómo te sientes tú con esta carga de la semana y con la idea de salir con este calor?",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 12662
+    },
+    {
+      "id": "AG-08",
+      "tipo": "react",
+      "turnos": [
+        "Siento que he corrido demasiado esta semana, es peligroso seguir asi?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_progreso_objetivo",
+        "consultar_base_conocimiento"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_progreso_objetivo",
+          "argumentos": {}
+        }
+      ],
+      "coincidencia_herramientas": false,
+      "respuesta_final": "Gracias por la información. Entiendo por qué podrías sentir que has corrido mucho esta semana. Mirando tus datos, veo que llevas 14 km recorridos, y tu meta semanal es de 25 km. Esto significa que estás al 56% de tu objetivo.\n\nLo que sí noto es que has tenido un aumento considerable respecto a la semana pasada, cuando corriste 5 km. Un incremento tan rápido en el volumen de entrenamiento, incluso si aún no alcanzas tu meta, puede ser un factor a considerar. A veces, el cuerpo necesita adaptarse a los nuevos desafíos.\n\n¿Quieres que consulte la base de conocimiento para darte más información sobre cómo gestionar los aumentos de carga de forma segura y evitar el sobreentrenamiento? Así podemos asegurarnos de que sigues progresando sin riesgos.",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 6644
+    },
+    {
+      "id": "AG-09",
+      "tipo": "limite_alcance",
+      "turnos": [
+        "Que pelicula me recomiendas ver este fin de semana?"
+      ],
+      "herramientas_esperadas": [],
+      "herramientas_invocadas": [],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Hola! Como tu entrenador de running, mi misión es ayudarte con todo lo relacionado con tus entrenamientos, metas y bienestar como corredor. No tengo información sobre películas para recomendar, pero si tienes alguna pregunta sobre tu rutina, cómo mejorar tu rendimiento, o cualquier duda sobre running, ¡estaré encantado de ayudarte!",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 2378
+    },
+    {
+      "id": "AG-10",
+      "tipo": "sin_herramientas",
+      "turnos": [
+        "Que significa cuando dicen zona 2 en running?"
+      ],
+      "herramientas_esperadas": [
+        "consultar_base_conocimiento"
+      ],
+      "herramientas_invocadas": [
+        {
+          "nombre": "consultar_base_conocimiento",
+          "argumentos": {
+            "consulta": "zona 2 en running"
+          }
+        }
+      ],
+      "coincidencia_herramientas": true,
+      "respuesta_final": "¡Qué buena pregunta! La \"Zona 2\" es un concepto fundamental en el entrenamiento de running y es genial que te intereses por entenderlo.\n\nSegún la base de conocimiento de la plataforma (KB-002), la Zona 2, también conocida como \"Base Aeróbica\", es un rango de intensidad de esfuerzo donde tu cuerpo trabaja principalmente el sistema aeróbico.\n\nAquí te explico los puntos clave:\n\n*   **Intensidad**: Generalmente se sitúa entre el 60% y el 75% de tu frecuencia cardíaca máxima (FC máx). En términos de esfuerzo percibido (RPE), sería un 3-4 en una escala del 1 al 10, es decir, un ritmo cómodo en el que podrías mantener una conversación.\n*   **Fisiología**: El objetivo principal de entrenar en esta zona es mejorar tu capacidad aeróbica. Esto se logra mediante:\n    *   El desarrollo de fibras musculares de contracción lenta, que son muy eficientes.\n    *   El aumento de las mitocondrias (las \"centrales energéticas\" de tus células) y la capilarización, que es la creación de más vasos sanguíneos pequeños para llevar oxígeno a los músculos.\n    *   La mejora en la oxidación de grasas como fuente de energía, lo que te permite correr más tiempo sin depender tanto de los carbohidratos.\n*   **Beneficios**: Al entrenar en Zona 2, tu cuerpo se vuelve más eficiente en el uso de lactato y en su aclaramiento. Esto significa que a una velocidad dada, producirás menos lactato y lo eliminarás mejor, lo que te ayuda a correr más rápido y por más tiempo antes de fatigarte, desplazando tus umbrales hacia velocidades superiores.\n*   **Sostenibilidad**: Es una intensidad que se puede mantener durante muchas horas, por lo que es la base de muchos planes de entrenamiento, especialmente en la preparación para distancias largas.\n\nEs importante saber que hay diferentes maneras de definir las zonas (por ejemplo, respecto a la frecuencia cardíaca de umbral o a LT2), y estas pueden dar rangos ligeramente distintos, pero la idea central de un esfuerzo aeróbico sostenido es la misma.\n\n¡Espero que esto te ayude a entender mejor la importancia de la Zona 2 en tu entrenamiento! Si tienes más dudas, ¡aquí estoy!",
+      "limite_alcanzado": false,
+      "reintento_utilizado": false,
+      "reintento_fallido": false,
+      "latencia_ms": 8097
+    }
+  ],
+  "metricas": {
+    "total_casos": 10,
+    "tasa_acierto_herramientas": 0.9,
+    "casos_con_limite_alcanzado": 0,
+    "casos_con_reintento_utilizado": 0,
+    "casos_con_reintento_fallido": 0,
+    "latencia_promedio_ms": 7516,
+    "por_tipo": {
+      "sin_herramientas": {
+        "total": 2,
+        "aciertos": 2
+      },
+      "tool_calling": {
+        "total": 3,
+        "aciertos": 3
+      },
+      "rag": {
+        "total": 2,
+        "aciertos": 2
+      },
+      "memoria": {
+        "total": 1,
+        "aciertos": 1
+      },
+      "react": {
+        "total": 1,
+        "aciertos": 0
+      },
+      "limite_alcance": {
+        "total": 1,
+        "aciertos": 1
+      }
+    }
+  }
+}
