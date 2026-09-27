@@ -92,6 +92,14 @@ class RespuestaAgente:
         degradado: si alguna capacidad fallo durante la ejecucion. NO se marca
             cuando la base de conocimiento simplemente no cubre la pregunta:
             eso es el sistema funcionando y viaja en detalle.
+        fallo: si el agente no llego a producir contenido de dominio. Es mas
+            estrecho que 'degradado' y los dos no son intercambiables: un
+            Coach al que se le cayo el servicio de clima responde degradado
+            pero util, mientras que un agente que lanzo una excepcion no
+            aporto nada y su 'texto' es el mensaje generico que puso el
+            orquestador. Solo _delegar() lo marca. Distinguirlos importa
+            porque de ello depende que ese texto se encadene o no como
+            contexto al siguiente agente: ver _ejecutar_plan().
         detalle: informacion especifica del agente, para trazabilidad.
         latencia_ms: cuanto tardo este agente en particular.
     """
@@ -101,5 +109,6 @@ class RespuestaAgente:
     herramientas_invocadas: list[str] = field(default_factory=list)
     fuentes: list[str] = field(default_factory=list)
     degradado: bool = False
+    fallo: bool = False
     detalle: dict = field(default_factory=dict)
     latencia_ms: int = 0

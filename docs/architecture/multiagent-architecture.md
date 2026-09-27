@@ -47,9 +47,25 @@ que define un sistema multiagente.
 
 | Agente | Responsabilidad | Fuera de su alcance |
 |---|---|---|
-| **Orchestrator Agent** | Recibir la solicitud, determinar la intención, delegar en el agente competente, consolidar y devolver | No responde al corredor por su cuenta ni consulta la base de conocimiento |
+| **Orchestrator Agent** | Recibir la solicitud, determinar la intención, delegar en el agente competente, consolidar y devolver. Emitir por sí mismo las respuestas de control del flujo | No genera respuestas especializadas de dominio ni consulta la base de conocimiento |
 | **Wellness Coach Agent** | Entrenamiento de running: carga, intensidad, lesiones, tapering, recuperación, progreso del corredor | Nutrición, hidratación y pautas alimentarias |
 | **Nutrition Agent** | Nutrición del corredor: ingesta, hidratación, pautas antes/durante/después del entrenamiento | Prescripción de entrenamiento y análisis de carga |
+
+La fila del orquestador distingue dos cosas que conviene no confundir. El
+orquestador **sí** produce texto dirigido al corredor en tres situaciones, todas
+de control del flujo: cuando no reconoce la intención y pide aclaración, cuando
+la consulta queda fuera del dominio de la plataforma y redirige, y cuando un
+agente falla y hay que declararlo. Son respuestas fijas, no generadas, y su
+contenido es sobre la conversación, no sobre running.
+
+Lo que **no** hace es producir contenido especializado: no responde una pregunta
+de entrenamiento ni de nutrición, no consulta la base de conocimiento, no accede
+a los datos del corredor y no reescribe lo que dicen los agentes. Esa es la
+frontera que lo mantiene siendo un coordinador. Si empezara a resolver casos por
+su cuenta, el sistema tendría la lógica de dominio repartida entre el
+coordinador y los especialistas, que es precisamente lo que el patrón Supervisor
+busca evitar. Las cuatro situaciones previstas y su respuesta están en
+[`docs/orchestration/orchestrator-agent.md`](../orchestration/orchestrator-agent.md).
 
 El **Wellness Coach** es el agente especializado asignado a este equipo, ya
 construido en el Sprint 2. El trabajo de S3-03 no fue crearlo sino **darle

@@ -14,15 +14,23 @@ Código: `src/orchestration/orchestrator/`
 
 | Hace | No hace |
 |---|---|
-| Recibir la solicitud del corredor | Responder preguntas de dominio por su cuenta |
+| Recibir la solicitud del corredor | Generar respuestas especializadas de dominio |
 | Clasificar la intención | Consultar la base de conocimiento |
 | Decidir a qué agentes delegar y en qué orden | Acceder a Firestore para datos del corredor |
 | Repartir la consulta cuando intervienen varios | Invocar herramientas |
 | Consolidar las respuestas y atribuirlas | Reescribir o parafrasear lo que dicen los agentes |
+| Emitir las respuestas de control del flujo | — |
 | Producir y registrar la traza | — |
 
-Cuando **no** delega —intención ajena al dominio, ambigua, o de un dominio sin
-agente asignado— responde con un **texto fijo, no generado**.
+**El orquestador sí responde al corredor, pero solo sobre la conversación.**
+Conviene precisarlo porque decir que «no responde por su cuenta» se contradice
+con el propio flujo: cuando **no** delega —intención ajena al dominio, ambigua,
+o de un dominio sin agente asignado— es él quien contesta, con un **texto fijo,
+no generado**. Lo mismo cuando un agente falla y hay que declararlo.
+
+Esas son respuestas de **control del flujo**: hablan de qué puede y qué no
+puede hacer el sistema, no de running. Lo que el orquestador no produce nunca
+es contenido de dominio.
 
 Esa restricción es deliberada y es criterio de aceptación de S3-02: la lógica de
 coordinación queda separada de la de los agentes. Si el orquestador empezara a

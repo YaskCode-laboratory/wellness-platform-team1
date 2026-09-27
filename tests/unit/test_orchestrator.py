@@ -41,8 +41,17 @@ def clasificacion(intencion, confianza=0.9, motivo="motivo de prueba", subconsul
     )
 
 
-def agente_falso(nombre, intencion, etiqueta, texto="respuesta del agente", error=None):
-    """Entrada de registro con un invocador que respeta el contrato de S3-04."""
+def agente_falso(nombre, intencion, etiqueta, texto="respuesta del agente",
+                 error=None, degradado=False):
+    """Entrada de registro con un invocador que respeta el contrato de S3-04.
+
+    'error' y 'degradado' modelan dos situaciones que no son la misma. Con
+    'error' el agente lanza y _delegar() devuelve una respuesta marcada como
+    fallo: no produjo contenido de dominio. Con 'degradado' el agente responde
+    con normalidad aunque alguna capacidad suya fallara, y su texto sigue
+    siendo util. De esa diferencia depende que su respuesta se encadene o no
+    como contexto al siguiente agente.
+    """
 
     def _invocar(solicitud: SolicitudAgente) -> RespuestaAgente:
         if error is not None:
@@ -52,6 +61,7 @@ def agente_falso(nombre, intencion, etiqueta, texto="respuesta del agente", erro
             texto=texto,
             herramientas_invocadas=[f"herramienta_de_{nombre}"],
             fuentes=[f"KB-{nombre[:3].upper()}"],
+            degradado=degradado,
         )
 
     return {
@@ -220,7 +230,7 @@ class TestColaboracionEntreAgentes(unittest.TestCase):
         ]
 
     def test_invoca_a_los_dos_agentes_en_orden(self):
-        respuestas = self.orq._ejecutar_plan(self.delegaciones, "u1", "traza-1")
+        _, respuestas = self.orq._ejecutar_plan(self.delegaciones, "u1", "traza-1")
 
         self.assertEqual([r.agente for r in respuestas], ["nutrition", "wellness_coach"])
         self.nutri["invocador"].assert_called_once()
@@ -264,9 +274,11 @@ class TestColaboracionEntreAgentes(unittest.TestCase):
         """El orquestador no parafrasea: las citas de cada agente se validaron
         contra el texto que ese agente produjo, y reescribirlo romperia esa
         correspondencia."""
-        respuestas = self.orq._ejecutar_plan(self.delegaciones, "u1", "traza-1")
+        ejecutadas, respuestas = self.orq._ejecutar_plan(
+            self.delegaciones, "u1", "traza-1"
+        )
 
-        texto = self.orq._consolidar(self.delegaciones, respuestas)
+        texto = self.orq._consolidar(ejecutadas, respuestas)
 
         self.assertIn(INTRO_COLABORACION, texto)
         self.assertIn("Sobre tu alimentacion", texto)
@@ -276,9 +288,9 @@ class TestColaboracionEntreAgentes(unittest.TestCase):
 
     def test_con_un_solo_agente_no_se_agrega_estructura(self):
         delegacion = [{"agente": self.coach, "mensaje": "msg"}]
-        respuestas = self.orq._ejecutar_plan(delegacion, "u1", "traza-1")
+        ejecutadas, respuestas = self.orq._ejecutar_plan(delegacion, "u1", "traza-1")
 
-        texto = self.orq._consolidar(delegacion, respuestas)
+        texto = self.orq._consolidar(ejecutadas, respuestas)
 
         self.assertEqual(texto, "Manten el aumento de carga por debajo del 10%.")
         self.assertNotIn(INTRO_COLABORACION, texto)
@@ -297,7 +309,7 @@ class TestColaboracionEntreAgentes(unittest.TestCase):
         ]
 
         with self.assertLogs("src.orchestration.orchestrator.agent", level="ERROR"):
-            respuestas = self.orq._ejecutar_plan(delegaciones, "u1", "traza-1")
+            _, respuestas = self.orq._ejecutar_plan(delegaciones, "u1", "traza-1")
 
         self.assertEqual(len(respuestas), 2)
         self.assertTrue(respuestas[0].degradado)
@@ -315,10 +327,111 @@ class TestColaboracionEntreAgentes(unittest.TestCase):
         ]
 
         with self.assertLogs("src.orchestration.orchestrator.agent", level="ERROR"):
-            respuestas = self.orq._ejecutar_plan(repetidas, "u1", "traza-1")
+            ejecutadas, respuestas = self.orq._ejecutar_plan(repetidas, "u1", "traza-1")
 
         self.assertEqual(len(respuestas), 1)
         self.assertEqual(self.coach["invocador"].call_count, 1)
+        self.assertEqual(len(ejecutadas), 1)
+        self.assertEqual(ejecutadas[0]["mensaje"], "a")
+
+    def test_una_delegacion_omitida_no_desalinea_la_traza(self):
+        """El defecto que motivo devolver las delegaciones ejecutadas.
+
+        _componer() reconstruia mensajeDelegado indexando el PLAN por la
+        posicion de la RESPUESTA. Con una omision intermedia el indice se
+        desplaza y la traza atribuye a un agente un mensaje que nunca recibio.
+
+        Aqui el plan pide nutricion, nutricion otra vez (omitida por la
+        guarda) y entrenamiento. Sin la correccion, el Coach aparecia en la
+        traza habiendo recibido la sub-consulta de nutricion.
+
+        Una traza equivocada es peor que una ausente: se lee como evidencia. Y
+        el defecto solo se manifestaba cuando actuaba una proteccion, que es
+        exactamente cuando hace falta poder auditar.
+        """
+        plan = {
+            "delegaciones": [
+                {"agente": self.nutri, "mensaje": "que como antes?"},
+                {"agente": self.nutri, "mensaje": "duplicada que se omite"},
+                {"agente": self.coach, "mensaje": "como ajusto la carga?"},
+            ],
+            "texto": None,
+            "motivo_no_delegacion": None,
+        }
+
+        with self.assertLogs("src.orchestration.orchestrator.agent", level="ERROR"):
+            ejecutadas, respuestas = self.orq._ejecutar_plan(
+                plan["delegaciones"], "u1", "traza-1"
+            )
+
+        traza = self.orq._componer(
+            traza_id="traza-1",
+            clasificacion=clasificacion("mixta"),
+            plan=plan,
+            ejecutadas=ejecutadas,
+            respuestas=respuestas,
+            latencia_clasificacion=10,
+            latencia_total=20,
+        )
+
+        self.assertEqual([p["agente"] for p in traza["pasos"]],
+                         ["nutrition", "wellness_coach"])
+        self.assertEqual(traza["pasos"][0]["mensajeDelegado"], "que como antes?")
+        self.assertEqual(traza["pasos"][1]["mensajeDelegado"], "como ajusto la carga?")
+
+    def test_el_texto_de_un_fallo_no_se_encadena_como_respuesta_valida(self):
+        """El segundo defecto de la revision de S3-04.
+
+        Cuando un agente falla, su 'texto' es RESPUESTA_AGENTE_FALLO: un
+        mensaje del orquestador dirigido al corredor, no contenido de dominio.
+        Encadenarlo producia "Nutrition Agent respondió: No pude completar tu
+        consulta...", y mensaje_con_contexto() le pide al siguiente que lo
+        COMPLEMENTE y no lo CONTRADIGA. El segundo agente acababa tratando un
+        mensaje de error como aportacion de un especialista.
+
+        Ademas invertia el sentido de la degradacion, que S3-01 definio como
+        conservar lo que si funciono: asi el fallo de uno contaminaba al otro.
+        """
+        nutri_caido = agente_falso(
+            "nutrition", "nutricion", "Sobre tu alimentacion",
+            error=ConnectionError("ChromaDB no responde"),
+        )
+        delegaciones = [
+            {"agente": nutri_caido, "mensaje": "que como?"},
+            {"agente": self.coach, "mensaje": "como entreno?"},
+        ]
+
+        with self.assertLogs("src.orchestration.orchestrator.agent", level="ERROR"):
+            self.orq._ejecutar_plan(delegaciones, "u1", "traza-1")
+
+        recibida = self.coach["invocador"].call_args[0][0]
+
+        self.assertNotIn(RESPUESTA_AGENTE_FALLO, recibida.contexto)
+        self.assertNotIn("respondió", recibida.contexto)
+        self.assertIn("no pudo completar", recibida.contexto)
+
+    def test_una_herramienta_caida_si_encadena_el_texto_del_agente(self):
+        """La contraparte, y la razon de que el discriminante sea 'fallo' y no
+        'degradado': un Coach que respondio bien pero no pudo consultar el
+        clima viene degradado, y su texto SI es contexto util para el
+        siguiente. Confundirlos descartaria informacion buena."""
+        coach_degradado = agente_falso(
+            "wellness_coach", "entrenamiento", "Sobre tu entrenamiento",
+            texto="No pude ver el clima, pero baja el volumen un 20%.",
+            degradado=True,
+        )
+
+        delegaciones = [
+            {"agente": coach_degradado, "mensaje": "como entreno?"},
+            {"agente": self.nutri, "mensaje": "que como?"},
+        ]
+
+        self.orq._ejecutar_plan(delegaciones, "u1", "traza-1")
+
+        recibida = self.nutri["invocador"].call_args[0][0]
+
+        self.assertIn("baja el volumen un 20%", recibida.contexto)
+        self.assertIn("respondió", recibida.contexto)
 
 
 class TestProcesarSolicitud(unittest.TestCase):

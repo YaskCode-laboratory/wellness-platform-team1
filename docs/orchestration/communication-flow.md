@@ -76,10 +76,11 @@ complementar sin repetir ni invadir el dominio del primero.
 | `herramientas_invocadas` | `list[str]` | Para trazabilidad |
 | `fuentes` | `list[str]` | `doc_id` realmente recuperados |
 | `degradado` | `bool` | Si alguna capacidad falló |
+| `fallo` | `bool` | Si el agente no llegó a producir contenido de dominio |
 | `detalle` | `dict` | Información específica del agente |
 | `latencia_ms` | `int` | Lo que tardó este agente |
 
-Dos campos tienen semántica que conviene fijar por escrito, porque de otro modo
+Tres campos tienen semántica que conviene fijar por escrito, porque de otro modo
 se interpretan mal al leer una traza:
 
 **`herramientas_invocadas` vacía no significa dato ausente.** El Nutrition Agent
@@ -90,20 +91,34 @@ trazabilidad viaja en `fuentes`.
 pobre. Que la knowledge base no cubra una pregunta no es degradación. Ver
 `delegation-rules.md`, sección 5.1.
 
+**`fallo` es más estrecho que `degradado` y no son intercambiables.** Solo lo
+marca el punto de despacho, ante una excepción del agente. Un Coach que
+respondió bien pero no pudo consultar el clima viene `degradado=True,
+fallo=False`. De esa distinción depende que su texto se encadene o no como
+contexto al siguiente agente: ver 5.1.
+
 ### 3.1 Asimetría conocida en `fuentes`
 
-El Wellness Coach **no expone sus fuentes de forma estructurada**. Cita los
-`doc_id` dentro de su prosa, gobernado por las reglas de citación de su prompt,
-pero su contrato de salida —heredado del ciclo ReAct del Sprint 2— no las
-devuelve como lista. Por eso `fuentes` llega vacía desde ese agente, y no porque
-no haya citado nada.
+El Wellness Coach **no expone sus fuentes de forma estructurada**. Su contrato
+de salida —heredado del ciclo ReAct del Sprint 2— no las devuelve como lista,
+así que `fuentes` llega vacía desde ese agente. Cuando cita, lo hace dentro de
+su prosa, gobernado por las reglas de citación de su prompt.
 
-Cuantificado en la evaluación de S3-06: **en tres de doce casos el Coach se
-fundamentó en la base de conocimiento y no pudo declarar una sola fuente**,
-mientras el Nutrition Agent sí las reporta.
+La evaluación de S3-06 cuantificó las dos mitades de este hueco, y resultaron
+tener causas distintas. En la corrida del 22 de septiembre el Coach no citaba
+por **ninguna** de las dos vías, ni estructurada ni en prosa, porque su prompt
+estaba truncado y las reglas de citación eran una de las secciones perdidas.
+Restaurado el prompt, cita en prosa en tres de los cuatro casos en que consulta
+la base —`fuentes` sigue vacía, porque el contrato no cambió.
+
+Dicho de otro modo: **la citación del Coach depende del prompt y la del
+Nutrition Agent está garantizada por construcción**, porque `validar_fuentes()`
+opera sobre un campo declarado. Por eso fue lo único de su comportamiento que
+se cayó al truncar el texto.
 
 La consecuencia práctica es que una evaluación de fidelidad automatizada solo
-podría cubrir a uno de los dos agentes. Corregirlo exige cambiar el contrato de
+podría cubrir a uno de los dos agentes leyendo el contrato; para el Coach hay
+que extraer los `doc_id` de la prosa. Corregirlo exige cambiar el contrato de
 salida del ciclo ReAct.
 
 ---
@@ -160,6 +175,53 @@ está en no caerse: está en conservar lo que sí funcionó.
 | Los dos agentes fallan | Dos respuestas degradadas; la traza lo refleja |
 | El clasificador falla | No se delega; se pide aclaración |
 | Falla el registro de la traza | La solicitud se responde igual; el fallo va al log |
+
+### 5.1 Un fallo no se encadena como si fuera una respuesta
+
+Conservar lo que sí funcionó tiene una consecuencia que la primera versión pasó
+por alto: **lo que no funcionó tampoco debe propagarse.**
+
+Cuando un agente falla, su `texto` es `RESPUESTA_AGENTE_FALLO`, un mensaje del
+orquestador dirigido al corredor, no contenido de dominio. El encadenamiento lo
+tomaba igual que cualquier otra respuesta y producía:
+
+```
+Nutrition Agent respondió:
+No pude completar tu consulta en este momento por un problema técnico.
+```
+
+Ese bloque llegaba al segundo agente dentro de `mensaje_con_contexto()`, que le
+pide **complementar y no contradecir** lo que dijo el especialista anterior. El
+resultado es un agente tratando un mensaje de error como aportación de un
+colega: puede disculparse por algo que no le corresponde, o evitar un tema que
+el primero nunca llegó a cubrir. La degradación de uno acababa contaminando al
+otro, que es lo contrario de lo que persigue.
+
+Ahora el orquestador declara explícitamente que el paso anterior no produjo
+información utilizable. El siguiente agente conserva el dato de que hubo un
+paso previo —lo que evita respuestas incoherentes con el flujo— sin recibir un
+error disfrazado de contenido.
+
+| Campo | Significa | ¿Se encadena su texto? |
+|---|---|---|
+| `degradado` | Alguna capacidad falló durante la ejecución | Sí |
+| `fallo` | El agente no llegó a producir contenido de dominio | No |
+
+### 5.2 La traza se construye con lo ejecutado, no con lo planificado
+
+La guarda contra repetición puede omitir una delegación, y entonces el plan y
+las respuestas dejan de tener la misma longitud. La primera versión reconstruía
+`mensajeDelegado` indexando el **plan** por la posición de la **respuesta**, de
+modo que una omisión intermedia desplazaba el índice y la traza atribuía a un
+agente un mensaje que nunca recibió.
+
+Una traza equivocada es peor que una traza ausente: se lee como evidencia. Y el
+defecto era doblemente grave porque solo se manifestaba **cuando actuaba una
+protección**, que es justo el momento en que hace falta poder auditar.
+
+`_ejecutar_plan()` devuelve ahora las delegaciones efectivamente ejecutadas
+junto a las respuestas, emparejadas por construcción, y `_componer()` afirma
+ese invariante en vez de confiar en él.
 
 ---
 

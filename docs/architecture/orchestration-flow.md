@@ -10,8 +10,8 @@ se justifica lo que representa.
 ## 1. Arquitectura del sistema multiagente
 
 Las llamadas a Vertex AI se omiten como aristas individuales para no saturar el
-diagrama: **los tres agentes y el orquestador invocan a Gemini**, y el pipeline
-RAG lo usa además para generar embeddings de consulta.
+diagrama: **el orquestador y los dos agentes especializados invocan a Gemini**,
+y el pipeline RAG lo usa además para generar embeddings de consulta.
 
 ```mermaid
 graph TD

@@ -1,0 +1,79 @@
+{
+  "descripcion": "Veredictos de calidad emitidos a mano sobre las respuestas del golden set multiagente. Cubren la parte del criterio_aprobacion que ninguna comprobacion automatica puede decidir: si la respuesta es util, si respeta la frontera de dominio y si el reparto de una consulta mixta tiene sentido. Las comprobaciones automaticas mandan sobre este archivo: un caso que falle alguna se reporta como no_cumple aunque aqui figure como cumple.",
+  "por_que_un_archivo_aparte": "El golden set describe QUE se espera y no debe reescribirse tras cada corrida. Estos veredictos son observaciones sobre una corrida concreta. Mezclarlos invitaria a ajustar el criterio despues de ver el resultado.",
+  "corrida_evaluada": "2026-09-27, con el prompt del Wellness Coach restaurado y TOP_K=3. Sustituye a los veredictos de la corrida del 22 de septiembre, medida con el prompt truncado.",
+  "casos": {
+    "MA-01": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Responde al saludo y pregunta en que puede ayudar sin invocar agentes. No lo trata como tema ajeno a la plataforma, que era el modo de fallar de este caso."
+    },
+    "MA-02": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Redirige al dominio de la plataforma sin intentar responder la pregunta ni parcialmente."
+    },
+    "MA-03": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Consulta el progreso real: 14 km sobre una meta de 25, contrastados con los 5 km de la semana anterior. No pregunta al corredor un dato que la plataforma ya tiene, que es el patron que los hallazgos E y F del Sprint 2 persiguieron. Cierra preguntando como se siente, que es lo unico que la plataforma no puede saber, y lo hace despues de haber entregado la informacion."
+    },
+    "MA-04": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Consulta el clima de Maracaibo y lo incorpora con sensacion termica, precipitacion y viento. Declara ademas que la base de conocimiento no cubre entrenar a 26 grados, en vez de fingir respaldo documental. Anotado como observacion y no como incumplimiento: tras declarar ese vacio ofrece pautas generales de hidratacion y precaucion, que no estan fundamentadas en la base. Es defendible como consejo de sentido comun y esta explicitamente marcado como recomendacion general, pero roza el limite que la instruccion 1 del prompt RAG fija para el otro modo."
+    },
+    "MA-05": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Cumple tras restaurar el prompt. En la corrida anterior el contenido era correcto pero la respuesta no mencionaba su origen, porque las reglas de citacion estaban entre las secciones que el truncamiento elimino. Ahora atribuye explicitamente a KB-002 y reproduce con fidelidad lo que ese documento dice sobre el umbral LT1 y el rango de frecuencia cardiaca."
+    },
+    "MA-06": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Pautas de hidratacion fundamentadas en KB-006, con la fuente declarada en el campo estructurado. No da recomendaciones de entrenamiento."
+    },
+    "MA-07": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Da la pauta de carbohidratos por hora fundamentada en KB-006."
+    },
+    "MA-08": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Intervienen los dos agentes y cada uno recibe solo su parte: al Coach 'como ajusto el entrenamiento esta semana, considerando que tengo una tirada larga', al Nutrition Agent 'que debo comer antes de una tirada larga'. La sub-consulta de entrenamiento conserva la tirada larga, que es lo que el criterio exige. El Coach cita KB-001 y el Nutrition Agent declara que KB-006 no cubre la alimentacion previa -- el mismo vacio que MA-11 documenta -- en vez de rellenarlo. Ninguno deriva al otro. El orden salio invertido respecto al esperado: ver la nota sobre variabilidad en multiagent-evaluation.md."
+    },
+    "MA-09": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "El caso dificil del conjunto: el mensaje no menciona comida y aun asi el clasificador reconocio el componente nutricional. Confirma que razona por dominio de conocimiento y no por palabras presentes en el texto. Con el prompt restaurado el Coach ademas cita KB-005 y KB-007, donde antes no citaba nada."
+    },
+    "MA-10": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Cumple su criterio: el clasificador no lo marco como mixto pese al componente nutricional tangencial de una preparacion para competir, que es lo que el caso verifica, y la respuesta de tapering es correcta. Se registra aparte una observacion que su criterio no cubre: el Coach atribuye el dato a 'la base de conocimiento de la plataforma' sin nombrar el documento, de modo que la afirmacion del 41-60% no es verificable por quien la lee. Es citacion parcial, no ausencia de citacion. Ver el hallazgo sobre atribucion generica en multiagent-evaluation.md."
+    },
+    "MA-11": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Declara el vacio de KB-006 sobre alimentacion previa al ejercicio, precisa que lo que si tiene cubre nutricion durante el esfuerzo y recuperacion posterior, y no cita ninguna fuente ni rellena con conocimiento general. Es el comportamiento correcto: una respuesta que reconoce un vacio vale mas que una que lo tapa."
+    },
+    "MA-12": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-27",
+      "nota": "Pide aclaracion sin delegar y sin adivinar a que se referia el mensaje incompleto."
+    }
+  }
+}
