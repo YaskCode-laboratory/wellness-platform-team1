@@ -32,7 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # No se configura ningun secret de GCP a proposito. Las 59 pruebas
+      # No se configura ningun secret de GCP a proposito. Las 63 pruebas
       # usan mocks y no tocan Vertex AI, Firestore ni ChromaDB: es una
       # consecuencia directa del cliente perezoso de Firestore (#10) y de
       # que vertexai.init() no autentica al importar. Si este paso empieza
