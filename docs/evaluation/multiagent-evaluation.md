@@ -54,9 +54,57 @@ python -m scripts.evaluation.seed_agent_test_user
 python -u -m scripts.evaluation.evaluate_multiagent
 ```
 
+### 1.4 Cómo se evalúa la calidad de cada respuesta
+
+El golden set declaraba desde el principio un `criterio_aprobacion` por caso, y
+ningún resultado decía si se cumplía. La consecuencia fue que la corrida
+terminaba anunciando «100 % de delegación exacta» mientras MA-05 incumplía su
+criterio, y nada en la salida lo hacía visible. Ahora cada caso produce un
+veredicto explícito, en dos partes.
+
+**Comprobaciones automáticas.** Junto al criterio en prosa, cada caso declara
+la parte que una máquina puede decidir: que se citen fuentes o que no se cite
+ninguna, que aparezca un `doc_id` concreto, que se invoque cierta herramienta,
+que el texto mencione o evite una expresión. Es un subconjunto del criterio, no
+su sustituto.
+
+**Veredicto manual.** Lo que ninguna comprobación captura —si la respuesta es
+útil, si respeta la frontera, si el reparto de una consulta mixta tiene
+sentido— se registra en `data/evaluation/multiagent_calidad_manual.json`, con
+nota, autor y fecha. Vive aparte del golden set a propósito: el golden set
+describe qué se espera y no debe reescribirse tras cada corrida, mientras que
+los veredictos son observaciones sobre una corrida concreta. Mezclarlos
+invitaría a ajustar el criterio después de ver el resultado.
+
+Dos reglas gobiernan la combinación:
+
+- **Lo automático manda.** Si una comprobación falla, el caso no cumple aunque
+  alguien lo haya marcado a mano como correcto. Un veredicto manual puede
+  reprobar lo que las comprobaciones aprobaron, pero no al revés: la señal
+  automática es la que no depende de quién la mire.
+- **Sin juicio humano el caso queda pendiente, nunca aprobado.** Una evaluación
+  de calidad a la que le falta juicio debe declararlo. Los pendientes se
+  reportan como tercera categoría y no se suman ni a los aprobados ni a los
+  reprobados.
+
+**Qué cuenta como fuente citada.** La unión de dos orígenes, porque los dos
+agentes citan distinto: el Nutrition Agent devuelve sus `doc_id` en un campo
+estructurado, y el Coach —cuando cita— los escribe dentro de su prosa, que su
+contrato de salida no expone. Mirar solo la traza daría por no citada toda
+respuesta del Coach; mirar solo el texto haría lo mismo con el Nutrition Agent.
+Ver 4.2.
+
 ---
 
 ## 2. Resultados
+
+> **Estas cifras corresponden a la corrida del 22 de septiembre y no al sistema
+> que se entrega.** Después de medirlas se descubrió que el prompt del Wellness
+> Coach estaba truncado —faltaban, entre otras, las reglas de citación— y que
+> `TOP_K` seguía en 5 pese a que el Sprint 1 había adoptado 3. Ambas cosas están
+> corregidas y la evaluación debe repetirse. Se conservan aquí porque el
+> análisis de las secciones 3 y 4 se apoya en ellas y porque la comparación
+> entre las dos corridas es en sí misma evidencia: ver 4.2.
 
 | Métrica | Valor |
 |---|---|
@@ -68,8 +116,26 @@ python -u -m scripts.evaluation.evaluate_multiagent
 | Casos con orden de delegación incorrecto | ninguno |
 | Casos degradados | ninguno |
 | Casos con colaboración | MA-08, MA-09 |
-| Latencia total promedio | 9 294 ms |
-| Latencia de clasificación promedio | 2 923 ms |
+| **Casos que cumplen su criterio de calidad** | **10/12** |
+| Casos que no lo cumplen | MA-05 |
+| Pendientes de veredicto | MA-10 |
+| Tiempo de respuesta promedio | 9 294 ms |
+| — del cual, clasificación | 2 923 ms |
+
+**Dos métricas distintas, y la segunda es nueva.** La tasa de delegación mide
+si el orquestador eligió los agentes correctos; la de calidad, si la respuesta
+cumple el `criterio_aprobacion` que el golden set declara para ese caso. La
+primera versión del marco solo medía la primera, de modo que la corrida
+terminaba con «100 %» mientras MA-05 incumplía su criterio sin que nada lo
+dijera. Cómo se evalúa la calidad está en 1.4; el detalle de MA-05, en 3.6.
+
+**Sobre la latencia.** La cifra publicada es el **tiempo de respuesta**, medido
+alrededor de la llamada al orquestador, que es lo que percibe quien la hace.
+El desglose interno que el propio orquestador contabiliza (`latencias.totalMs`)
+es necesariamente algo menor, porque no incluye la entrada ni la salida de
+`procesar()`, y sirve para repartir ese tiempo entre sus partes, no para
+reportarlo. Ninguna de las dos incluye la capa HTTP: la evaluación invoca al
+orquestador directamente.
 
 ### 2.1 Por tipo
 
@@ -84,7 +150,7 @@ python -u -m scripts.evaluation.evaluate_multiagent
 
 ### 2.2 Detalle por caso
 
-| Caso | Intención | Confianza | Agentes | Herramientas | Fuentes | Latencia |
+| Caso | Intención | Confianza | Agentes | Herramientas | Fuentes | Tiempo de respuesta |
 |---|---|---|---|---|---|---|
 | MA-01 | `no_reconocida` | 0.90 | — | — | — | 4 050 ms |
 | MA-02 | `fuera_de_dominio` | 1.00 | — | — | — | 2 104 ms |
@@ -100,9 +166,10 @@ python -u -m scripts.evaluation.evaluate_multiagent
 | MA-12 | `no_reconocida` | 0.95 | — | — | — | 2 413 ms |
 
 **Sobre el 100 %.** Es la tasa de **delegación exacta**: mide si el orquestador
-eligió los agentes correctos, ni más ni menos. No mide la calidad de las
-respuestas, que se evalúa cualitativamente en la sección 3, ni la fidelidad del
-contenido a las fuentes, que sigue pendiente (sección 4.6).
+eligió los agentes correctos, ni más ni menos. La calidad de las respuestas se
+mide aparte —10/12— y la fidelidad del contenido a las fuentes sigue pendiente
+(sección 4.6). MA-05 es el caso que muestra por qué las tres son cosas
+distintas: delegación exacta, criterio de calidad incumplido (sección 3.6).
 
 ---
 
@@ -176,6 +243,46 @@ hallazgo D no se ejercitó en esta corrida. Conviene ser preciso al reportarlo:
 **ese mecanismo está verificado por las pruebas unitarias y por el incidente
 real del Sprint 2, no por esta medición.**
 
+### 3.6 MA-05 — Delegar bien no es responder bien
+
+El único caso que no cumple su criterio, y el que motivó separar las dos
+métricas.
+
+El criterio dice: *«Responde fundamentado en la base de conocimiento y menciona
+que la información proviene de ella. No responde desde conocimiento general.»*
+
+Lo que ocurrió: el orquestador clasificó `entrenamiento` con confianza 0.95,
+delegó en el Coach —delegación exacta—, el Coach invocó
+`consultar_base_conocimiento`, y la respuesta reproduce con fidelidad lo que
+KB-002 dice sobre la zona 2: umbral LT1, RPE 3-4, densidad mitocondrial,
+capilarización, oxidación de grasas. El contenido es correcto y proviene de la
+base de conocimiento.
+
+**Y aun así el caso no cumple.** El criterio pide dos cosas y la segunda no se
+dio: la respuesta no menciona en ningún momento de dónde sale. Para el corredor
+que la lee, es indistinguible de una respuesta inventada por el modelo. Y eso
+desarma precisamente la tesis del proyecto, que no es «el sistema sabe de
+running» sino «el sistema puede demostrar de dónde saca lo que dice».
+
+La causa está identificada en 4.2: las reglas de citación eran una de las
+secciones que el truncamiento del prompt eliminó.
+
+Tres cosas que este caso deja claras:
+
+**El fallo era invisible para la métrica que teníamos.** Con delegación exacta
+al 100 %, MA-05 se contaba como acierto. Sin un veredicto de calidad por caso,
+la corrida decía que todo estaba bien.
+
+**La métrica cómoda no es la métrica que importa.** La delegación es fácil de
+medir —conjuntos de nombres de agentes— y la calidad no. Medir solo lo cómodo
+produce cifras excelentes sobre lo que menos importa.
+
+**La revisión externa encontró lo que la medición propia no.** El defecto no
+apareció corriendo el evaluador más veces, sino leyendo el criterio declarado y
+contrastándolo con la traza. Es el mismo patrón de los hallazgos E y F del
+Sprint 2: los problemas de calidad se ven leyendo salidas, no agregando
+métricas.
+
 ---
 
 ## 4. Limitaciones y hallazgos
@@ -203,33 +310,57 @@ operativo, a riesgo de rechazar clasificaciones correctas— o si se retira y se
 conserva la confianza solo como señal de traza. Hacen falta casos
 deliberadamente ambiguos para decidirlo con datos; este conjunto no los tiene.
 
-### 4.2 El Wellness Coach no reporta fuentes
+### 4.2 El Wellness Coach no declaró fuentes por ninguna de las dos vías
 
-Cuantificado sobre esta corrida:
+Cuantificado sobre esta corrida, mirando los dos caminos por los que un agente
+puede acreditar su fuente:
 
-| Caso | Consultó la KB | Fuentes reportadas |
-|---|---|---|
-| MA-05 | sí | **ninguna** |
-| MA-09 | sí | **ninguna** |
-| MA-10 | sí | **ninguna** |
+| Caso | Consultó la KB | En el campo `fuentes` | `doc_id` en la prosa |
+|---|---|---|---|
+| MA-05 | sí | **ninguna** | **ninguno** |
+| MA-09 | sí | **ninguna** | **ninguno** |
+| MA-10 | sí | **ninguna** | **ninguno** |
 
 Tres casos en los que el Coach fundamentó su respuesta en la base de
-conocimiento y no pudo declarar una sola fuente. El Nutrition Agent sí las
-reporta (MA-06, MA-07).
+conocimiento y no declaró una sola fuente. El Nutrition Agent sí las reporta
+(MA-06, MA-07), en el campo estructurado.
 
-La causa está documentada desde S3-04: el Coach cita los `doc_id` dentro de su
-prosa, gobernado por las reglas de citación de su prompt, pero su contrato de
-salida —heredado del ciclo ReAct del Sprint 2— no las devuelve como lista.
+**La versión anterior de este documento atribuía el hueco a una sola causa, y
+eran dos.** Decía que el Coach *"cita los `doc_id` dentro de su prosa"* y que
+lo único que fallaba era el contrato de salida. La primera mitad es falsa en
+esta corrida: buscando el patrón `KB-\d{3}` en el texto de las doce respuestas
+no aparece ninguna cita. El Coach no citó ni estructuradamente ni en prosa.
 
-**La consecuencia es que la trazabilidad de fuentes es asimétrica entre los dos
-agentes**, y que una evaluación de fidelidad automatizada solo podría cubrir a
-uno de ellos. Corregirlo exige cambiar el contrato de salida del ciclo ReAct.
+Separadas, las dos causas son:
+
+**Causa 1, el contrato de salida.** Documentada desde S3-04 y vigente: el ciclo
+ReAct del Sprint 2 no devuelve los `doc_id` como lista, así que
+`_invocar_wellness_coach` deja `fuentes` vacía aunque el agente hubiera citado.
+Corregirlo exige cambiar ese contrato.
+
+**Causa 2, el prompt truncado.** Descubierta después de esta corrida y ya
+corregida: al aplicar la delimitación de dominio de S3-03, el prompt del Coach
+quedó recortado de 105 a 42 líneas, y **las reglas de citación estaban entre
+las secciones perdidas**. Durante S3-03 a S3-06 el agente corrió sin
+instrucción alguna de citar.
+
+Esto vuelve la corrida entera **no representativa del sistema que se entrega**,
+y obliga a repetirla. También matiza la tesis que este sprint viene
+sosteniendo: las garantías estructurales sostuvieron el comportamiento del
+Coach con el 60 % de su prompt ausente —siguió invocando las herramientas
+correctas y respetando la frontera de nutrición— pero **la citación no es una
+garantía estructural en este agente**. En el Nutrition Agent sí lo es, porque
+`validar_fuentes()` opera sobre un campo declarado. En el Coach depende del
+prompt, y por eso fue lo único que se cayó al truncarlo.
+
+La asimetría de trazabilidad entre ambos agentes sigue en pie, y ahora se sabe
+que tiene una parte estructural y una parte de instrucción.
 
 ### 4.3 El costo del patrón Supervisor
 
 | | Valor |
 |---|---|
-| Latencia total promedio | 9 294 ms |
+| Tiempo de respuesta promedio | 9 294 ms |
 | Clasificación promedio | 2 923 ms |
 | **Sobrecosto de coordinación** | **≈ 31 %** |
 | Peor caso (MA-09, colaboración) | 26 015 ms |
@@ -309,7 +440,7 @@ completa vía `logger.exception`.
 | ¿Qué se le pidió exactamente a cada agente? | `pasos[].mensajeDelegado` |
 | ¿Qué consultó cada uno? | `pasos[].herramientasInvocadas`, `pasos[].fuentes` |
 | ¿Algo falló? | `degradado`, `pasos[].degradado`, `pasos[].detalle` |
-| ¿Cuánto costó cada paso? | `latencias`, `pasos[].latenciaMs` |
+| ¿Cuánto costó cada paso? | `latencias.*`, `pasos[].latenciaMs` |
 
 `mensajeDelegado` no lo exigía el issue. Se añadió porque ante una respuesta
 inesperada la primera pregunta es siempre qué se le pidió al agente, y sin ese

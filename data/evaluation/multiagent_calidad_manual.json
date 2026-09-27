@@ -1,0 +1,79 @@
+{
+  "descripcion": "Veredictos de calidad emitidos a mano sobre las respuestas del golden set multiagente. Cubren la parte del criterio_aprobacion que ninguna comprobacion automatica puede decidir: si la respuesta es util, si respeta la frontera de dominio y si el reparto de una consulta mixta tiene sentido. Las comprobaciones automaticas mandan sobre este archivo: un caso que falle alguna se reporta como no_cumple aunque aqui figure como cumple.",
+  "por_que_un_archivo_aparte": "El golden set describe QUE se espera y no debe reescribirse tras cada corrida. Estos veredictos son observaciones sobre una corrida concreta. Mezclarlos invitaria a ajustar el criterio despues de ver el resultado.",
+  "corrida_evaluada": "2026-09-22, previa a la restauracion del prompt del Wellness Coach y al ajuste de k=3. Los veredictos deben revisarse tras la nueva corrida: la version del prompt con la que se midio no es la que se entrega.",
+  "casos": {
+    "MA-01": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Responde al saludo y pregunta en que puede ayudar sin invocar agentes. No lo trata como tema ajeno a la plataforma, que era el modo de fallar de este caso."
+    },
+    "MA-02": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Redirige al dominio de la plataforma sin intentar responder la pregunta ni parcialmente."
+    },
+    "MA-03": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Consulta el progreso real y contrasta la carga actual con la meta. No pregunta al corredor un dato que la plataforma ya tiene, que es el patron que los hallazgos E y F del Sprint 2 persiguieron."
+    },
+    "MA-04": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Consulta el clima de la ciudad del corredor y lo incorpora a la recomendacion."
+    },
+    "MA-05": {
+      "cumple": false,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Senalado en la revision de S3-06. El contenido es correcto y proviene de la base de conocimiento -- invoco consultar_base_conocimiento y la respuesta reproduce lo que dice KB-002 sobre zona 2 -- pero el criterio exige ademas MENCIONAR ese origen, y la respuesta no cita ningun doc_id. La causa es identificable: el prompt del Coach estaba truncado durante esta corrida y las REGLAS DE CITACION eran una de las secciones perdidas. Debe reevaluarse con el prompt restaurado."
+    },
+    "MA-06": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Pautas de hidratacion fundamentadas en KB-006, con la fuente declarada en la traza. No da recomendaciones de entrenamiento."
+    },
+    "MA-07": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Da la pauta de carbohidratos por hora fundamentada en KB-006."
+    },
+    "MA-08": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Intervienen los dos agentes, cada uno recibe solo su parte y la sub-consulta de entrenamiento conserva que hay una tirada larga prevista. Ningun bloque deriva al otro especialista."
+    },
+    "MA-09": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "El caso dificil del conjunto: el mensaje no menciona comida y aun asi el clasificador reconocio el componente nutricional. Confirma que razona por dominio de conocimiento y no por palabras presentes en el texto."
+    },
+    "MA-10": {
+      "cumple": null,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Pendiente. El clasificador acerto en no marcarlo como mixto, que es lo que el caso verifica, pero la respuesta de tapering tampoco cita su origen. Se resuelve junto con MA-05 tras la nueva corrida."
+    },
+    "MA-11": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "El agente declaro el vacio de KB-006 sobre alimentacion previa al ejercicio sin citar ninguna fuente ni rellenarlo con conocimiento general. Es el comportamiento correcto: una respuesta que reconoce un vacio vale mas que una que lo tapa."
+    },
+    "MA-12": {
+      "cumple": true,
+      "evaluado_por": "jfurdaneta",
+      "fecha": "2026-09-22",
+      "nota": "Pide aclaracion sin delegar y sin adivinar a que se referia el mensaje incompleto."
+    }
+  }
+}
