@@ -7,13 +7,14 @@ traducen los errores de dominio a codigos HTTP.
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from src.api.seguridad import exigir_mismo_uid, exigir_propiedad
 from src.services import sessions_service
 from src.services.sessions_service import NoAutorizado, NoEncontrado, OperacionInvalida
 
-router = APIRouter(tags=["sessions"])
+router = APIRouter(tags=["sessions"], dependencies=[Depends(exigir_propiedad)])
 
 
 class SessionRequest(BaseModel):
@@ -71,7 +72,12 @@ def _ejecutar(operacion):
 # ── Sesiones ─────────────────────────────────────────────────────────────────
 
 @router.post("/sessions")
-def create_session(data: SessionRequest):
+def create_session(data: SessionRequest, uid: str = Depends(exigir_propiedad)):
+    # El userId viaja en el cuerpo y no en la ruta, asi que la dependencia del
+    # router solo pudo autenticar. La comprobacion de propiedad se completa
+    # aqui: sin ella, un corredor autenticado podria registrar sesiones en la
+    # cuenta de otro cambiando un campo del JSON.
+    exigir_mismo_uid(uid, data.userId)
     return _ejecutar(lambda: sessions_service.crear_sesion(data.model_dump()))
 
 
@@ -100,7 +106,9 @@ def delete_session(userId: str, session_id: str):
 # ── Objetivos ────────────────────────────────────────────────────────────────
 
 @router.post("/goals")
-def create_goal(data: GoalRequest):
+def create_goal(data: GoalRequest, uid: str = Depends(exigir_propiedad)):
+    # Mismo caso que create_session: el userId viene en el cuerpo.
+    exigir_mismo_uid(uid, data.userId)
     return _ejecutar(lambda: sessions_service.crear_objetivo(data.model_dump()))
 
 

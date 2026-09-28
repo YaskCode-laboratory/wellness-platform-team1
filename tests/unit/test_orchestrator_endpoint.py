@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.routes import orchestrator_routes
+from src.api.seguridad import exigir_propiedad
 
 # Forma completa de lo que devuelve OrchestratorAgent.procesar(). Se escribe
 # entera y no recortada a proposito: si el contrato de la traza cambia, esta
@@ -59,15 +60,29 @@ TRAZA = {
 }
 
 
-def cliente() -> TestClient:
+UID = "u-123"
+
+
+def cliente(uid: str = UID) -> TestClient:
     """App minima con solo este router montado.
 
     No se usa src.app.main porque alli conviven otros routers cuyo import
     tiene efectos propios: una prueba de este endpoint no deberia fallar
     porque otro modulo de rutas cambie.
+
+    La verificacion de identidad se sustituye por un doble que devuelve 'uid'.
+    Comprobar tokens de Firebase de verdad exigiria red y credenciales, y lo
+    que estas pruebas cubren es el contrato de la ruta. La dependencia real se
+    prueba en test_seguridad.py.
+
+    Ojo: se sustituye exigir_propiedad, que es lo que el router declara. Si
+    alguien cambiara esa dependencia por otra, este override dejaria de
+    aplicarse en silencio y las pruebas empezarian a dar 401, que es la senal
+    correcta.
     """
     app = FastAPI()
     app.include_router(orchestrator_routes.router)
+    app.dependency_overrides[exigir_propiedad] = lambda: uid
     return TestClient(app)
 
 

@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.seguridad import exigir_propiedad
 from src.agents.wellness.agent import WellnessAgent
 from src.database.firestore_client import db
 
-router = APIRouter(prefix="/agent", tags=["agent"])
+router = APIRouter(
+    prefix="/agent", tags=["agent"], dependencies=[Depends(exigir_propiedad)]
+)
 wellness_agent = WellnessAgent()
 
 

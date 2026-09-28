@@ -4,11 +4,14 @@ Migrados desde el microservicio 'metrics' de RunCoach AI. La logica vive en
 src/services/metrics_service.py.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.seguridad import exigir_propiedad
 from src.services import metrics_service
 
-router = APIRouter(prefix="/metrics", tags=["metrics"])
+router = APIRouter(
+    prefix="/metrics", tags=["metrics"], dependencies=[Depends(exigir_propiedad)]
+)
 
 
 def _ejecutar(operacion):
