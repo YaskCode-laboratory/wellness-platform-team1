@@ -80,9 +80,19 @@ class TestRepositorioCorredor(unittest.TestCase):
         hoy = fecha_de_hoy()
         lunes = hoy - timedelta(days=hoy.weekday())
 
+        # Las dos sesiones de la semana actual van en el lunes y en HOY, no en
+        # una fecha fija dentro de la semana. La version anterior usaba
+        # 'lunes + 2 dias', que los lunes y los martes cae en el futuro:
+        # calcular_carga_semanal() suma desde el lunes hasta hoy -- que es lo
+        # correcto, nadie ha corrido manana -- asi que esa sesion quedaba
+        # fuera y la prueba fallaba. Un dia de cada siete, y el primero en
+        # aparecer fue un lunes en CI.
+        #
+        # Si hoy ES lunes, ambas caen en el mismo dia y el total sigue siendo
+        # 13: la funcion suma por rango de fechas, no por dia distinto.
         sesiones_falsas = [
             _doc({"fecha": lunes.isoformat(), "distanciaKm": 5}),
-            _doc({"fecha": (lunes + timedelta(days=2)).isoformat(), "distanciaKm": 8}),
+            _doc({"fecha": hoy.isoformat(), "distanciaKm": 8}),
             _doc({"fecha": (lunes - timedelta(days=3)).isoformat(), "distanciaKm": 6}),
         ]
         self.mock_db.collection.return_value.where.return_value.stream.return_value = (
