@@ -26,19 +26,18 @@ from datetime import date, datetime, timedelta, timezone
 
 from google.cloud.firestore import FieldFilter
 
+from src.utils.fechas import hoy, lunes_de_esta_semana
 from src.database.firestore_client import db
 
 COLECCION_SESIONES = "sessions"
 COLECCION_OBJETIVOS = "goals"
 
 
-def _hoy() -> date:
-    return datetime.now(timezone.utc).date()
-
-
-def _lunes_de_esta_semana() -> date:
-    hoy = _hoy()
-    return hoy - timedelta(days=hoy.weekday())
+# Se reexportan desde src.utils.fechas para no duplicar la definicion de
+# 'hoy'. Tenerla dos veces fue lo que permitio que este modulo y el
+# repositorio derivaran hacia UTC sin que nadie lo notara.
+_hoy = hoy
+_lunes_de_esta_semana = lunes_de_esta_semana
 
 
 def _rango_semana(offset: int = 0) -> tuple[str, str]:

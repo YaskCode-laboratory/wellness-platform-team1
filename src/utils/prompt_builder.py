@@ -4,6 +4,8 @@ import json
 from datetime import date, datetime
 from pathlib import Path
 
+from src.utils.fechas import dias_desde, hoy
+
 
 # ── Carga de plantillas ──────────────────────────────────────────────────────
 
@@ -23,7 +25,7 @@ def dias_desde(fecha_str) -> int | None:
         fecha = datetime.fromisoformat(str(fecha_str)[:10]).date()
     except ValueError:
         return None
-    return (date.today() - fecha).days
+    return dias_desde(fecha)
 
 
 def enriquecer_sesiones(sessions: list) -> list:
@@ -92,7 +94,7 @@ def build_wellness_prompt(sessions: list, current_km: float,
     template = load_prompt_template("wellness_agent")
 
     return template.format(
-        fecha_actual=date.today().isoformat(),
+        fecha_actual=hoy().isoformat(),
         sessions_text=json.dumps(enriquecer_sesiones(sessions), ensure_ascii=False,
                                  indent=2, default=str),
         current_km=current_km,

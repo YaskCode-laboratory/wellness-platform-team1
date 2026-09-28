@@ -21,6 +21,7 @@ from datetime import datetime
 import vertexai
 from vertexai.generative_models import GenerativeModel
 
+from src.utils.fechas import instante_iso
 from src.agents.shared.base_agent import BaseAgent
 from src.data.repositorio_corredor import RepositorioCorredor
 from src.database.firestore_client import db
@@ -111,7 +112,7 @@ class WellnessAgent(BaseAgent):
             "userId": user_id,
             "modo": mode,
             "latenciaMs": latencia_ms,
-            "generadoEn": datetime.utcnow().isoformat(),
+            "generadoEn": instante_iso(),
             "kmSemanaActual": estado.current_km,
             "kmSemanaAnterior": estado.previous_km,
         })
@@ -155,7 +156,7 @@ class WellnessAgent(BaseAgent):
 
         return {
             "userId": user_id,
-            "generadoEn": datetime.utcnow().isoformat(),
+            "generadoEn": instante_iso(),
             "estadoCorredor": {
                 "nivel": estado.nivel,
                 "kmSemanaActual": estado.current_km,

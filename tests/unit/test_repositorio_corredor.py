@@ -11,6 +11,12 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 from src.data.repositorio_corredor import PerfilCorredor, RepositorioCorredor
+# Se usa hoy() y no fecha_de_hoy(). Son la misma fecha en el portatil del equipo
+# y distintas en el runner de CI, que corre en UTC: comparar contra fecha_de_hoy()
+# hacia que estas pruebas pasaran o fallaran segun la hora y la maquina. La
+# prueba tiene que compartir la definicion de "hoy" con el codigo que verifica.
+from src.utils.fechas import hoy as fecha_de_hoy
+
 
 
 def _doc(datos: dict, existe: bool = True) -> MagicMock:
@@ -71,7 +77,7 @@ class TestRepositorioCorredor(unittest.TestCase):
         self.assertEqual(perfil.nivel, "no declarado")
 
     def test_calcular_carga_semanal(self):
-        hoy = date.today()
+        hoy = fecha_de_hoy()
         lunes = hoy - timedelta(days=hoy.weekday())
 
         sesiones_falsas = [

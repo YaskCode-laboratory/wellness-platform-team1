@@ -10,6 +10,12 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 from src.services import metrics_service
+# Se usa hoy() y no fecha_de_hoy(). Son la misma fecha en el portatil del equipo
+# y distintas en el runner de CI, que corre en UTC: comparar contra fecha_de_hoy()
+# hacia que estas pruebas pasaran o fallaran segun la hora y la maquina. La
+# prueba tiene que compartir la definicion de "hoy" con el codigo que verifica.
+from src.utils.fechas import hoy as fecha_de_hoy
+
 
 
 def doc(datos, doc_id="doc-firestore"):
@@ -118,7 +124,7 @@ class TestGraficoSemanal(unittest.TestCase):
         semanas = [date.fromisoformat(d["semana"]) for d in salida["data"]]
         self.assertEqual(len(semanas), 4)
         self.assertEqual(semanas, sorted(semanas))
-        self.assertEqual(semanas[-1], lunes_de(date.today()))
+        self.assertEqual(semanas[-1], lunes_de(fecha_de_hoy()))
 
 
 class TestProgresoDeObjetivos(unittest.TestCase):
@@ -172,7 +178,7 @@ class TestProgresoDeObjetivos(unittest.TestCase):
         self.assertEqual(salida["goals"][0]["id"], "g-api")
 
     def test_el_objetivo_semanal_acumula_los_kilometros_de_la_semana(self):
-        lunes = lunes_de(date.today())
+        lunes = lunes_de(fecha_de_hoy())
         objetivo = {"id": "g1", "tipo": "semanal", "kmMeta": 25}
         sesiones = [
             sesion(str(lunes), km=8),
@@ -190,7 +196,7 @@ class TestProgresoDeObjetivos(unittest.TestCase):
         self.assertEqual(r["sesiones"], 2)
 
     def test_el_porcentaje_semanal_no_pasa_de_cien(self):
-        lunes = lunes_de(date.today())
+        lunes = lunes_de(fecha_de_hoy())
         r = metrics_service._progreso_semanal(
             {"id": "g1", "tipo": "semanal", "kmMeta": 10},
             [sesion(str(lunes), km=40)],

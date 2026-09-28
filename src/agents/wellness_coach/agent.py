@@ -58,6 +58,7 @@ from pathlib import Path
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
 
+from src.utils.fechas import hoy
 from src.agents.wellness_coach.memory import MemoriaConversacional
 from src.agents.wellness_coach.tools.registro import despachar, obtener_tool_vertexai
 from src.data.repositorio_corredor import RepositorioCorredor
@@ -182,7 +183,7 @@ class WellnessCoachAgent:
     def _construir_system_instruction(self, nivel: str, ciudad: str | None, historial_texto: str) -> str:
         plantilla = PROMPT_PATH.read_text(encoding="utf-8")
         return plantilla.format(
-            fecha_actual=date.today().isoformat(),
+            fecha_actual=hoy().isoformat(),
             nivel=nivel,
             ciudad=ciudad or "no registrada",
             historial_conversacion=historial_texto,

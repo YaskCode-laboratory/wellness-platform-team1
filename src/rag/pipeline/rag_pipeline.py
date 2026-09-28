@@ -4,6 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 
+from src.utils.fechas import hoy
 from src.rag.generation.generator import generar
 from src.rag.retriever.retriever import recuperar
 from src.utils.prompt_builder import (
@@ -199,7 +200,7 @@ def ejecutar_rag(
     # 2. Construcción del prompt con contexto
     plantilla = PROMPT_PATH.read_text(encoding="utf-8")
     prompt = plantilla.format(
-        fecha_actual=date.today().isoformat(),
+        fecha_actual=hoy().isoformat(),
         contexto=construir_contexto(chunks),
         nivel=nivel or "no declarado",
         current_km=current_km,

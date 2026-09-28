@@ -48,6 +48,7 @@ LIMITACIONES
 
 from datetime import date
 
+from src.utils.fechas import hoy
 from src.data.repositorio_corredor import RepositorioCorredor
 from src.rag.generation.generator import generar
 from src.rag.pipeline.rag_pipeline import validar_fuentes
@@ -105,7 +106,7 @@ class NutritionAgent:
         plantilla = load_prompt_template("nutrition_agent")
 
         prompt = plantilla.format(
-            fecha_actual=date.today().isoformat(),
+            fecha_actual=hoy().isoformat(),
             nivel=perfil.nivel,
             peso=f"{perfil.peso} kg" if perfil.peso else "no registrado",
             fragmentos=_formatear_fragmentos(chunks),

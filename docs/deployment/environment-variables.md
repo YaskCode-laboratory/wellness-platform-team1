@@ -18,7 +18,16 @@ GOOGLE_APPLICATION_CREDENTIALS=/ruta/a/service-account.json
 |---|---|---|
 | `GCP_PROJECT` | Sí | Proyecto de Google Cloud |
 | `GCP_LOCATION` | Sí | Región de los modelos de Vertex AI |
+| `ZONA_HORARIA` | No (`America/Caracas`) | Zona en la que el sistema razona sobre el calendario. Ver más abajo |
 | `GOOGLE_APPLICATION_CREDENTIALS` | En despliegue | Ruta a la cuenta de servicio. No necesaria en local si se usan ADC ni en Cloud Run, que provee identidad nativa |
+
+**Sobre `ZONA_HORARIA`.** Decide qué día es «hoy» y qué sesiones entran en la
+semana en curso, así que afecta a la carga semanal, a la comparación con la
+meta y a los datos con los que razona el agente. Debe ser la zona de los
+corredores, no la del servidor: Cloud Run corre en UTC, y con los corredores en
+UTC−4 eso hacía que a partir de las ocho de la noche el backend creyera que ya
+era el día siguiente. Los timestamps que se persisten siguen en UTC y no
+dependen de esta variable.
 
 ---
 
