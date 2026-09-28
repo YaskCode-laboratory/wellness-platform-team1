@@ -5,7 +5,10 @@ import { registerUser } from '../services/api'
 import logoMax from '../assets/runcoachlogomax.png'
 
 const Register = () => {
-    const { register, login } = useAuth()
+  // El alta la hace registerUser() contra el backend, que ademas crea el
+  // perfil del corredor; el 'register' del contexto solo crearia el usuario
+  // en Firebase. Aqui hace falta unicamente iniciar sesion despues.
+  const { login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     nombre: '',

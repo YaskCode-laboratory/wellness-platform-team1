@@ -1,0 +1,249 @@
+name: Desplegar
+
+# Publica el sistema completo al integrar en main: el backend en Cloud Run y
+# el frontend en Firebase Hosting.
+#
+# EL ORDEN NO ES ARBITRARIO: BACKEND PRIMERO
+#
+# Automatizar solo el frontend habria introducido un desfase que antes no
+# existia. Con los dos despliegues manuales, nadie publica media version sin
+# darse cuenta; con uno solo automatizado, un cambio que toca las dos partes
+# publica la interfaz nueva contra el backend viejo. El sintoma es un 404 en
+# endpoints que la interfaz da por existentes -- exactamente lo que ocurrio al
+# probar el chat multiagente contra los servicios desplegados del Sprint 2.
+#
+# Por eso el frontend depende del backend. Si el backend falla, el frontend no
+# se publica y el sistema se queda entero en la version anterior, que es un
+# estado coherente.
+#
+# SOLO SE DESPLIEGA LO QUE CAMBIO
+#
+# Reconstruir la imagen del backend tarda minutos. El job 'cambios' mira que
+# rutas se tocaron y salta lo que no hace falta, sin perder el orden cuando
+# cambian las dos.
+
+on:
+  push:
+    branches: [main]
+  # Permite publicar bajo demanda desde cualquier rama, util para ensayar la
+  # demostracion sin integrar en main.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un despliegue a la vez, y no se cancela el que este en curso: interrumpir una
+# publicacion a medias deja el sistema en un estado que nadie eligio.
+concurrency:
+  group: despliegue
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT: runcoach-ai-496921
+  GCP_REGION: us-central1
+  SERVICIO_BACKEND: wellness-backend
+
+jobs:
+  # ── Puerta 1: la suite ────────────────────────────────────────────────────
+  # Se invoca el workflow existente en vez de repetir sus pasos. Duplicarlos
+  # habria creado dos definiciones de "las pruebas pasan" que se desincronizan
+  # a la primera de cambio.
+  pruebas:
+    uses: ./.github/workflows/tests.yml
+
+  # ── Que hay que desplegar ─────────────────────────────────────────────────
+  cambios:
+    name: Detectar que cambio
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend }}
+      frontend: ${{ steps.filtro.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          # En workflow_dispatch no hay diff contra el que comparar, asi que
+          # la accion devuelve todo como cambiado y se despliegan las dos
+          # partes. Es lo que se quiere de una publicacion manual.
+          filters: |
+            backend:
+              - 'src/**'
+              - 'prompts/**'
+              - 'data/vector_store/**'
+              - 'data/knowledge_base/**'
+              - 'requirements.txt'
+              - 'Dockerfile'
+              - '.dockerignore'
+            frontend:
+              - 'frontend/**'
+
+  # ── Backend ───────────────────────────────────────────────────────────────
+  backend:
+    name: Publicar el backend en Cloud Run
+    needs: [pruebas, cambios]
+    if: needs.cambios.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      # La clave JSON de una cuenta de servicio es una credencial de larga
+      # vida: si se filtra, sirve hasta que alguien la revoque a mano. La
+      # alternativa correcta es Workload Identity Federation, que intercambia
+      # el token OIDC de GitHub por credenciales temporales y no guarda nada
+      # permanente en el repositorio. Se elige la clave por tiempo y queda
+      # anotado en docs/deployment/cloud-deployment.md como deuda, no como
+      # decision definitiva.
+      - name: Autenticar contra Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configurar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Se construye desde el Dockerfile del repositorio y no con buildpacks:
+      # la aplicacion vive en src/app/main.py y los buildpacks buscan un
+      # main.py en la raiz. Ademas asi se fija Python 3.11, la misma version
+      # del CI y del entorno de desarrollo.
+      - name: Construir y publicar
+        run: |
+          gcloud run deploy "$SERVICIO_BACKEND" \
+            --source . \
+            --project "$GCP_PROJECT" \
+            --region "$GCP_REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "GCP_PROJECT=$GCP_PROJECT,GCP_LOCATION=$GCP_REGION,GEMINI_MODEL=${{ vars.GEMINI_MODEL }},EMBEDDING_MODEL=${{ vars.EMBEDDING_MODEL }},ZONA_HORARIA=${{ vars.ZONA_HORARIA }}" \
+            --quiet
+
+      # No basta con que el despliegue termine sin error: Cloud Run puede
+      # publicar una revision que arranca y responde 500 a todo. Se comprueba
+      # que el servicio contesta antes de dejar que el frontend se publique
+      # contra el.
+      - name: Comprobar que el backend responde
+        run: |
+          url=$(gcloud run services describe "$SERVICIO_BACKEND" \
+                  --project "$GCP_PROJECT" --region "$GCP_REGION" \
+                  --format 'value(status.url)')
+          echo "Servicio en $url"
+          for intento in 1 2 3 4 5; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' "$url/health" || echo 000)
+            if [ "$codigo" = "200" ]; then
+              echo "El backend responde 200 en /health."
+              exit 0
+            fi
+            echo "Intento $intento: $codigo. Reintentando en 10 s."
+            sleep 10
+          done
+          echo "El backend no respondio 200 tras cinco intentos."
+          exit 1
+
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    name: Publicar el frontend en Firebase Hosting
+    needs: [pruebas, cambios, backend]
+    # 'always()' porque el job del backend puede haberse SALTADO legitimamente
+    # cuando solo cambio el frontend, y un job saltado hace que sus
+    # dependientes se salten tambien. Lo que no se tolera es que haya fallado.
+    if: |
+      always()
+      && needs.pruebas.result == 'success'
+      && needs.cambios.outputs.frontend == 'true'
+      && needs.backend.result != 'failure'
+      && needs.backend.result != 'cancelled'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # El lint quedo en cero errores al montar este pipeline. Las reglas que
+      # solo afectan a la experiencia de desarrollo estan degradadas a aviso,
+      # nombradas y con el motivo escrito en eslint.config.js.
+      - name: Verificar el lint
+        run: npm run lint
+
+      # Si falta configuracion, el build NO falla: Vite sustituye las
+      # variables ausentes por cadenas vacias y produce un bundle que compila
+      # y se despliega, pero que no puede autenticar a nadie ni hablar con el
+      # backend. Se comprueba antes para que el fallo ocurra aqui y no en el
+      # navegador de quien abra la aplicacion.
+      - name: Comprobar que la configuracion esta completa
+        env:
+          VITE_AUTH_URL: ${{ vars.VITE_AUTH_URL }}
+          VITE_SESSIONS_URL: ${{ vars.VITE_SESSIONS_URL }}
+          VITE_METRICS_URL: ${{ vars.VITE_METRICS_URL }}
+          VITE_AGENT_URL: ${{ vars.VITE_AGENT_URL }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+        run: |
+          faltantes=""
+          for clave in VITE_AUTH_URL VITE_SESSIONS_URL VITE_METRICS_URL \
+                       VITE_AGENT_URL VITE_FIREBASE_API_KEY \
+                       VITE_FIREBASE_AUTH_DOMAIN VITE_FIREBASE_PROJECT_ID \
+                       VITE_FIREBASE_STORAGE_BUCKET \
+                       VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID; do
+            if [ -z "${!clave}" ]; then
+              faltantes="$faltantes $clave"
+            fi
+          done
+          if [ -n "$faltantes" ]; then
+            echo "Faltan variables de repositorio:$faltantes"
+            echo "Se definen en Settings > Secrets and variables > Actions > Variables."
+            exit 1
+          fi
+          echo "Las diez variables estan definidas."
+
+      # Se invoca 'vite build' y NO 'npm run build'.
+      #
+      # El script de npm ejecuta antes scripts/bump-version.js, que incrementa
+      # el patch en package.json. En CI ese cambio se descarta al terminar el
+      # job, asi que la version publicada no existiria en el repositorio: el
+      # "Beta vX.Y.Z" de la pantalla de login apuntaria a un numero imposible
+      # de encontrar en la historia, y saltaria valores cada vez que alguien
+      # construyera en local.
+      #
+      # Asi, lo publicado siempre lleva la version commiteada. Subirla sigue
+      # siendo deliberado: 'npm run build' en local y commitear el resultado.
+      - name: Construir
+        env:
+          VITE_AUTH_URL: ${{ vars.VITE_AUTH_URL }}
+          VITE_SESSIONS_URL: ${{ vars.VITE_SESSIONS_URL }}
+          VITE_METRICS_URL: ${{ vars.VITE_METRICS_URL }}
+          VITE_AGENT_URL: ${{ vars.VITE_AGENT_URL }}
+          VITE_ORCHESTRATOR_URL: ${{ vars.VITE_ORCHESTRATOR_URL }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+        run: npx vite build
+
+      - name: Publicar en Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          projectId: runcoach-ai-496921
+          channelId: live
+          entryPoint: frontend
