@@ -7,7 +7,7 @@ name: Tests
 # 'branches: [develop, main]', al abrir el Sprint 3.
 #
 # La segunda tampoco alcanza bajo la metodologia de un issue -> una rama ->
-# un PR. Los siete PR del sprint estan encadenados y cada uno apunta a su
+# un PR. Los PR del sprint estan encadenados y cada uno apunta a su
 # predecesor, no a develop: solo el primero de la cadena cumple el filtro, y
 # los demas van cumpliendolo de uno en uno a medida que se integran los
 # anteriores. La evidencia de CI acaba dependiendo del orden de merge, cuando

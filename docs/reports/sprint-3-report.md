@@ -8,6 +8,20 @@ Julio César Matute (frontend/UI) · José Francisco Urdaneta Sánchez (backend/
 
 ---
 
+## 0. Dónde encontrar cada cosa
+
+| Qué | Sección |
+|---|---|
+| Arquitectura final implementada | §2 · §3 · §4 |
+| Agentes participantes y su frontera | §2.1 · §2.3 |
+| Resultados de S3-06 | §6.3 |
+| Limitaciones | §10 |
+| Hallazgos | §8 |
+| Instrucciones de reproducción y demostración | §7.6 |
+| Estado final del Sprint 3 | §12 |
+
+---
+
 ## 1. Resumen ejecutivo
 
 El Sprint 3 convirtió un sistema de **un agente** en un sistema **multiagente**.
@@ -422,6 +436,137 @@ falla, si el lint falla, si falta configuración, o si `/health` no responde 200
 porque que `gcloud run deploy` termine sin error no significa que el servicio
 funcione.
 
+### 7.6 Cómo reproducir el sistema y la demostración
+
+El criterio de S3-07 pide una demostración **reproducible por un tercero**. Lo
+que sigue es el recorrido completo, desde un clon limpio.
+
+#### Requisitos
+
+Python 3.11, Node 22, y credenciales de Google Cloud con acceso a Vertex AI y
+Firestore en el proyecto `runcoach-ai-496921`. El índice de ChromaDB **viaja
+versionado en el repositorio**, así que no hay que construirlo.
+
+#### 1 · Backend
+
+```bash
+git clone https://github.com/YaskCode-laboratory/wellness-platform-team1.git
+cd wellness-platform-team1
+
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env
+```
+
+El `.env` funciona sin editar: las cuatro variables tienen valores por defecto
+correctos para este proyecto. `GOOGLE_APPLICATION_CREDENTIALS` debe quedar
+**comentada** si se usan Application Default Credentials:
+
+```bash
+gcloud auth application-default login
+gcloud auth application-default set-quota-project runcoach-ai-496921
+```
+
+Y se levanta desde la raíz del repositorio, con `python -m` para que los
+imports absolutos `from src...` resuelvan:
+
+```bash
+python -m uvicorn src.app.main:app --reload --port 8080
+```
+
+Comprobación: `curl localhost:8080/health` debe devolver `200`.
+
+#### 2 · Datos del corredor
+
+Sin datos, los agentes no tienen sobre qué razonar. Hay dos caminos.
+
+**Usuario sintético**, reproducible y anclado al lunes de la semana en curso
+para que la carga semanal sea la misma corra el día que corra:
+
+```bash
+python -m scripts.evaluation.seed_agent_test_user
+```
+
+**Cuenta real**, que es lo que conviene para una demostración en vivo:
+
+```bash
+python -m scripts.evaluation.seed_agent_test_user --email tu@correo.com
+```
+
+Resuelve el `uid` de Firebase de esa cuenta y siembra sus sesiones, su objetivo
+y su perfil, completando solo los campos que falten. Requiere que la cuenta ya
+exista: si no, hay que registrarse antes desde la interfaz.
+
+> **La ciudad importa.** Sin ella, la herramienta de clima del Coach no tiene
+> dónde consultar y declara que no puede — correcto, pero deja una de las
+> cuatro herramientas sin demostrar. Se pone desde *Perfil* en la interfaz.
+
+#### 3 · Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.example .env
+```
+
+Este `.env` **sí hay que editarlo**: las variables de Firebase son propias del
+proyecto y no tienen valor por defecto. Las cuatro URL del backend ya apuntan a
+`http://localhost:8000` — cámbialas a `8080` si levantaste el backend en ese
+puerto, o arráncalo en 8000.
+
+```bash
+npm run dev
+```
+
+> Vite lee el `.env` **solo al arrancar**. Si lo editas con el servidor
+> corriendo, hay que reiniciarlo: no basta con recargar el navegador. Es una
+> hora perdida que ya pagamos.
+
+#### 4 · El recorrido de la demostración
+
+Entra con la cuenta sembrada y ve a **Recomendación**, que es el hub de tres
+pestañas. Cinco momentos, en este orden:
+
+**Modo RAG, pestaña Recomendación.** Genera una recomendación y observa que
+cita sus fuentes. Es el punto de partida del Sprint 1.
+
+**Modo legacy, misma pestaña.** El mismo estado del corredor, la otra
+arquitectura. Responde bien y no cita nada, porque no tiene de dónde.
+
+**Pestaña Comparativa.** Ejecuta las dos sobre el mismo estado, en la misma
+petición. La caja roja declara *«ninguna — no puede citar»*; la azul muestra
+los fragmentos recuperados y la consulta con que los buscó. **Es el argumento
+central del proyecto en una sola pantalla.**
+
+**Pestaña Chat, consulta de un solo dominio.** Por ejemplo *«¿qué significa
+zona 2?»*. Abre el panel de traza: intención `entrenamiento`, confianza, un
+solo agente, la herramienta que invocó y la fuente que citó.
+
+**Pestaña Chat, consulta mixta.** Por ejemplo *«¿qué como antes de una tirada
+larga y cómo ajusto el entrenamiento esta semana?»*. Aquí se ve el sistema
+multiagente completo: intención `mixta`, **dos agentes**, y en la traza el
+mensaje que recibió cada uno — que no es la pregunta entera sino su parte. Es
+lo que distingue delegar de reenviar.
+
+Tarda unos 25 segundos. La delegación es secuencial porque el segundo agente
+recibe el contexto del primero; está declarado como limitación en §10.
+
+#### 5 · Verificar que todo está donde debe
+
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+
+python -m scripts.verificacion.verificar_integraciones
+
+python -u -m scripts.evaluation.evaluate_multiagent
+```
+
+La primera son las 241 pruebas con mocks, sin credenciales. La segunda son diez
+comprobaciones contra los servicios reales, incluidas dos de frontera. La
+tercera corre el golden set completo y tarda unos tres minutos.
+
 ---
 
 ## 8. Hallazgos
@@ -664,7 +809,36 @@ podría reemplazarse por una estructural.
 
 ---
 
-## 12. Conclusión
+## 12. Estado final y conclusión
+
+### 12.1 Estado de entrega
+
+| Issue | Entregable | Estado |
+|---|---|---|
+| **S3-01** · #17 | Arquitectura multiagente y patrón Supervisor | Completo |
+| **S3-02** · #18 | Orchestrator Agent con clasificación y delegación | Completo |
+| **S3-03** · #19 | Agente especializado con frontera estructural | Completo |
+| **S3-04** · #20 | Comunicación y delegación entre agentes | Completo |
+| **S3-05** · #21 | Integración con datos y servicios | Completo |
+| **S3-06** · #22 | Evaluación del flujo y observabilidad | Completo |
+| **S3-07** · #23 | Documentación y demostración reproducible | Completo |
+| **S3-08** | Despliegue automatizado | Completo |
+
+| | |
+|---|---|
+| Metodología | Un issue → una rama → un Pull Request, encadenados |
+| Suite de pruebas | 241, en verde y verificadas en cada PR |
+| Delegación exacta | 100 % (12/12) |
+| Criterio de calidad | 12/12 |
+| Tiempo de respuesta promedio | 9 602 ms |
+| Agentes en producción | Orchestrator + Wellness Coach + Nutrition |
+| Frontend | Firebase Hosting, publicación automática |
+| Backend | Cloud Run, publicación automática |
+
+Todas las observaciones de la revisión formal quedaron atendidas, y **dos de
+ellas produjeron hallazgos** que no habrían aparecido de otro modo (§8.5, §8.6).
+
+### 12.2 Conclusión
 
 El sprint cumplió los ocho issues y cerró con delegación exacta al 100 % y
 calidad 12/12, pero esas cifras son lo menos interesante que produjo.
