@@ -12,7 +12,7 @@ Desarrollado como proyecto de la asignatura **Sistemas Inteligentes** — Maestr
 |--------|------|--------|
 | Sprint 1 | Ingeniería del conocimiento y RAG | Entregado |
 | Sprint 2 | Agentes inteligentes | Entregado |
-| Sprint 3 | Sistemas multiagente | En revisión |
+| Sprint 3 | Sistemas multiagente | Entregado |
 
 ## Qué hace el sistema hoy
 
