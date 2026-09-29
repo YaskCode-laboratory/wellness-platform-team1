@@ -175,6 +175,31 @@ Los roles que necesita, y solo esos:
 | Artifact Registry Writer | Guardar la imagen construida |
 | Service Account User | Asignar al servicio su identidad de ejecución |
 | Firebase Hosting Admin | Publicar el frontend |
+| Storage Object Admin | Subir el código fuente que Cloud Build va a construir |
+| Storage Admin, **solo sobre el bucket** `run-sources-<proyecto>-<región>` | Leer la configuración del bucket de fuentes antes de subir |
+| Storage Bucket Viewer | Listar los buckets del proyecto para encontrar el de fuentes |
+| Service Usage Consumer | Consumir las APIs del proyecto (Cloud Build, Artifact Registry) en su nombre |
+
+Los cuatro últimos no aparecen a primera vista porque vienen de cómo funciona
+`gcloud run deploy --source .`: antes de construir, **sube el código a un
+bucket de Cloud Storage** del que luego lee Cloud Build. Un despliegue manual
+con una cuenta de propietario no lo deja ver, porque esa cuenta ya tiene todos
+los permisos; la primera corrida del pipeline con esta cuenta sí lo mostró, y
+lo hizo de a uno: `storage.buckets.get` primero y `storage.buckets.list`
+después. El primero se concede sobre el bucket y no sobre el proyecto, para
+que la cuenta no pueda administrar ningún otro. El segundo no admite ese
+recorte, porque listar buckets es una operación del proyecto; por eso se usa
+Storage Bucket Viewer, que contiene solo esos dos permisos y no da acceso al
+contenido de ningún bucket.
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://run-sources-<proyecto>-<región> \
+  --member=serviceAccount:<cuenta> --role=roles/storage.admin
+gcloud projects add-iam-policy-binding <proyecto> \
+  --member=serviceAccount:<cuenta> --role=roles/storage.bucketViewer --condition=None
+gcloud projects add-iam-policy-binding <proyecto> \
+  --member=serviceAccount:<cuenta> --role=roles/serviceusage.serviceUsageConsumer --condition=None
+```
 
 Conviene que sea una cuenta **creada para esto y nada más**, no la que ya usa
 el backend en ejecución: esa tiene acceso a Firestore y a Vertex AI, que un
@@ -184,10 +209,12 @@ workflow de despliegue no necesita.
 alguien la revoque a mano, y con esos roles permite publicar código
 arbitrario en el proyecto. La alternativa correcta es **Workload Identity
 Federation**: GitHub intercambia su token OIDC por credenciales temporales y
-no queda nada permanente guardado. Se eligió la clave por tiempo, con la
-entrega encima, y queda anotado aquí como deuda explícita y no como decisión
-definitiva. Migrarlo es media hora de `gcloud` y cambiar cuatro líneas del
-workflow.
+no queda nada permanente guardado. Se eligió la clave para no introducir en
+el mismo cambio dos piezas nuevas que pueden fallar por separado: con el
+pipeline recién estrenado, un error de despliegue tenía que poder atribuirse
+al pipeline y no a una federación de identidades configurada a la vez. Queda
+anotado aquí como deuda explícita y no como decisión definitiva. Migrarlo es
+media hora de `gcloud` y cambiar cuatro líneas del workflow.
 
 ### 3.2 Tres variables del backend
 

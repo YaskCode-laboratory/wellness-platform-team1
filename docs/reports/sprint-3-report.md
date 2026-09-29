@@ -70,10 +70,12 @@ construcción.**
 ### 1.1 Lo que cambió en el proceso respecto al Sprint 2
 
 El Sprint 2 consolidó sus siete issues en **un solo Pull Request**. Fue una
-decisión consciente bajo presión de tiempo, con una mitigación real —cada commit
-pasaba la suite completa y cada pieza se verificaba contra servicios reales
-antes de construir la siguiente encima—, pero perdía la trazabilidad granular
-por issue. La revisión formal de la cátedra lo señaló y fijó la regla para este
+decisión consciente, motivada por el acoplamiento entre las piezas: memoria,
+herramientas y ciclo ReAct dependían unas de otras, y ninguna se podía
+verificar aislada contra servicios reales. Tuvo una mitigación real —cada
+commit pasaba la suite completa y cada pieza se verificaba contra servicios
+reales antes de construir la siguiente encima—, pero perdía la trazabilidad
+granular por issue. La revisión formal de la cátedra lo señaló y fijó la regla para este
 sprint: **un issue → una rama → un Pull Request.**
 
 El Sprint 3 la aplicó. Ocho issues, ocho ramas, ocho Pull Requests, encadenados
