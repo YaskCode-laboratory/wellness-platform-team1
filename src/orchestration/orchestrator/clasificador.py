@@ -22,18 +22,34 @@ GARANTIA ESTRUCTURAL SOBRE EL FORMATO
 La respuesta se restringe con response_schema, no con instrucciones en el
 prompt. El Sprint 2 dejo claro el limite de confiar un contrato al texto: los
 hallazgos C, E y F son tres manifestaciones distintas del mismo problema. Aqui
-el SDK garantiza la forma, y el enum de intenciones se genera desde el
-registro de agentes, de modo que el clasificador no puede inventar una
-intencion que el orquestador no sepa resolver.
+el SDK garantiza la forma, y los enum se generan desde el registro de agentes,
+de modo que el clasificador no puede nombrar una intencion ni un dominio que
+el orquestador no sepa resolver.
 
 El parseo es defensivo de todas formas. Una respuesta malformada degrada a
 "no_reconocida" con confianza cero, que el orquestador traduce en una peticion
 de aclaracion -- nunca en una delegacion equivocada.
+
+LAS SUBCONSULTAS
+
+Saber que una pregunta es mixta no basta para atenderla: hay que saber a
+quienes delegar, en que orden, y QUE preguntarle a cada uno.
+
+La primera version de S3-04 entregaba el mensaje completo a los dos agentes.
+Funcionaba, pero producia respuestas redundantes: el primer especialista
+contestaba su parte y ademas derivaba la ajena al segundo, que respondia justo
+debajo en la misma pantalla. El corredor leia "de eso se ocupa el otro
+especialista" seguido inmediatamente del otro especialista.
+
+Ahora el clasificador reparte la consulta: cada dominio recibe su propia
+pregunta, autonoma y sin la parte que no le toca. El orden que devuelve
+determina quien responde primero y cuya respuesta sirve de contexto al
+siguiente.
 """
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 import vertexai
@@ -41,6 +57,7 @@ from vertexai.generative_models import GenerationConfig, GenerativeModel
 
 from src.orchestration.orchestrator.registro_agentes import (
     catalogo_para_prompt,
+    intenciones_con_agente,
     intenciones_validas,
 )
 from src.utils.config import GCP_LOCATION, GCP_PROJECT, GEMINI_MODEL
@@ -54,8 +71,17 @@ logger = logging.getLogger(__name__)
 UMBRAL_CONFIANZA = 0.5
 
 INTENCION_POR_DEFECTO = "no_reconocida"
+INTENCION_MIXTA = "mixta"
 
 vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
+
+
+@dataclass(frozen=True)
+class SubConsulta:
+    """La parte de una consulta mixta que corresponde a un dominio."""
+
+    dominio: str
+    mensaje: str
 
 
 @dataclass
@@ -65,18 +91,29 @@ class Clasificacion:
     intencion: str
     motivo: str
     confianza: float
+    subconsultas: list[SubConsulta] = field(default_factory=list)
+
+    @property
+    def dominios(self) -> list[str]:
+        """Nombres de los dominios implicados, en orden. Para la traza."""
+        return [s.dominio for s in self.subconsultas]
 
     @property
     def es_confiable(self) -> bool:
         return self.confianza >= UMBRAL_CONFIANZA
 
+    @property
+    def es_colaboracion(self) -> bool:
+        """True si la solicitud requiere mas de un agente y se sabe cuales."""
+        return self.intencion == INTENCION_MIXTA and len(self.subconsultas) >= 2
+
 
 def _esquema_respuesta() -> dict:
     """Esquema JSON que el modelo debe respetar.
 
-    El enum se construye desde el registro en cada llamada, no se escribe
+    Los enum se construyen desde el registro en cada llamada, no se escriben
     aqui: registrar un agente nuevo amplia el conjunto de intenciones validas
-    sin tocar este archivo.
+    y de dominios delegables sin tocar este archivo.
     """
     return {
         "type": "object",
@@ -84,8 +121,19 @@ def _esquema_respuesta() -> dict:
             "intencion": {"type": "string", "enum": intenciones_validas()},
             "motivo": {"type": "string"},
             "confianza": {"type": "number"},
+            "dominios": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "dominio": {"type": "string", "enum": intenciones_con_agente()},
+                        "mensaje": {"type": "string"},
+                    },
+                    "required": ["dominio", "mensaje"],
+                },
+            },
         },
-        "required": ["intencion", "motivo", "confianza"],
+        "required": ["intencion", "motivo", "confianza", "dominios"],
     }
 
 
@@ -100,6 +148,45 @@ def _construir_prompt(mensaje: str) -> str:
 
 def _clasificacion_de_respaldo(motivo: str) -> Clasificacion:
     return Clasificacion(intencion=INTENCION_POR_DEFECTO, motivo=motivo, confianza=0.0)
+
+
+def _subconsultas_validas(crudas, mensaje_original: str) -> list[SubConsulta]:
+    """Convierte la lista cruda del modelo en subconsultas utilizables.
+
+    Conserva el orden, porque determina quien responde primero y cuya
+    respuesta sirve de contexto al siguiente. Descarta dominios desconocidos y
+    repetidos: invocar dos veces al mismo agente en una solicitud no aporta y
+    duplica latencia.
+
+    Si el modelo nombra un dominio valido pero deja su mensaje vacio, se usa el
+    mensaje original en vez de descartar la delegacion. Un agente con la
+    pregunta entera responde de mas; un agente al que no se invoca deja un
+    hueco silencioso en la respuesta, que es peor.
+    """
+    con_agente = intenciones_con_agente()
+    vistos: set[str] = set()
+    salida: list[SubConsulta] = []
+
+    for cruda in crudas or []:
+        if not isinstance(cruda, dict):
+            continue
+        dominio = str(cruda.get("dominio", ""))
+        if dominio not in con_agente or dominio in vistos:
+            continue
+        vistos.add(dominio)
+
+        submensaje = str(cruda.get("mensaje", "")).strip()
+        if not submensaje:
+            logger.warning(
+                "El clasificador no redacto submensaje para el dominio '%s'; "
+                "se usa el mensaje original.",
+                dominio,
+            )
+            submensaje = mensaje_original
+
+        salida.append(SubConsulta(dominio=dominio, mensaje=submensaje))
+
+    return salida
 
 
 def clasificar(mensaje: str) -> Clasificacion:
@@ -140,8 +227,26 @@ def clasificar(mensaje: str) -> Clasificacion:
     except (TypeError, ValueError):
         confianza = 0.0
 
+    subconsultas = _subconsultas_validas(datos.get("dominios"), mensaje)
+
+    # Una intencion mixta sin al menos dos dominios delegables es incoherente
+    # consigo misma: el modelo afirma que hacen falta varios especialistas y no
+    # sabe nombrarlos. Se trata como no confiable en vez de adivinar.
+    if intencion == INTENCION_MIXTA and len(subconsultas) < 2:
+        logger.warning(
+            "Clasificacion mixta con dominios insuficientes: %r. Se pedira aclaracion.",
+            [s.dominio for s in subconsultas],
+        )
+        return Clasificacion(
+            intencion=INTENCION_MIXTA,
+            motivo=str(datos.get("motivo", "")),
+            confianza=0.0,
+            subconsultas=subconsultas,
+        )
+
     return Clasificacion(
         intencion=intencion,
         motivo=str(datos.get("motivo", "")),
         confianza=max(0.0, min(1.0, confianza)),
+        subconsultas=subconsultas,
     )
