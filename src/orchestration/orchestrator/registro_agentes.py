@@ -15,25 +15,28 @@ cliente perezoso de Firestore del issue #10.
 DOMINIOS PREVISTOS SIN AGENTE
 
 _DOMINIOS_SIN_AGENTE declara dominios que pertenecen a la plataforma pero que
-todavia no tienen un agente que los atienda. Existe para que el clasificador
-pueda distinguir tres situaciones que no son lo mismo:
+todavia no tienen un agente que los atienda, para que el clasificador pueda
+distinguir tres situaciones que no son lo mismo: un dominio propio sin agente,
+un tema ajeno a la plataforma, y un mensaje sin intencion clasificable. Sin esa
+distincion, una pregunta de un dominio previsto se clasificaria como fuera de
+dominio y el corredor recibiria una redireccion incorrecta.
 
-    "que como antes de correr"     -> dominio propio, sin agente aun
-    "que pelicula me recomiendas"  -> fuera del dominio de la plataforma
-    "hola"                         -> no hay intencion que clasificar
+La lista esta vacia al cerrar S3-03: la nutricion, que era su unica entrada en
+S3-02, paso a _AGENTES al implementarse el Nutrition Agent. El mecanismo se
+conserva porque el roadmap de la plataforma contempla agentes de motivacion y
+analitica, y porque graduar un dominio de una lista a la otra es exactamente el
+camino previsto para incorporarlos.
 
-Sin esta distincion, una pregunta de nutricion se clasificaria como fuera de
-dominio y el corredor recibiria una redireccion incorrecta: se le diria que la
-plataforma no trata ese tema cuando si lo trata.
+ESTADO EN S3-03
 
-ALCANCE DE S3-02: solo el Wellness Coach esta registrado, porque es el unico
-agente especializado que existe al cerrar el Sprint 2. La nutricion se
-clasifica correctamente y se responde con una degradacion honesta. El
-Nutrition Agent se registra en S3-03, momento en que su entrada pasa de
-_DOMINIOS_SIN_AGENTE a _AGENTES. La delegacion multiple de la intencion mixta
-llega en S3-04.
+Dos agentes registrados: el Wellness Coach (agente especializado asignado al
+equipo, construido en el Sprint 2) y el Nutrition Agent (segundo participante,
+necesario para que exista colaboracion que verificar). La delegacion sigue
+siendo a un solo agente por solicitud; la intencion mixta se reconoce pero su
+atencion corresponde a S3-04.
 """
 
+from src.agents.nutrition.agent import NutritionAgent
 from src.agents.wellness_coach.agent import WellnessCoachAgent
 
 _instancias: dict[str, object] = {}
@@ -74,6 +77,49 @@ def _invocar_wellness_coach(user_id: str, mensaje: str) -> dict:
     }
 
 
+def _invocar_nutrition(user_id: str, mensaje: str) -> dict:
+    """Adaptador entre el contrato del orquestador y el del Nutrition Agent.
+
+    El Nutrition Agent no invoca herramientas: recupera y responde en una sola
+    llamada. 'herramientas_invocadas' queda vacia a proposito, y no es un dato
+    ausente sino una caracteristica de su diseno. La trazabilidad de lo que
+    consulto viaja en 'fragmentos_recuperados'.
+
+    QUE CUENTA COMO DEGRADACION Y QUE NO
+
+    Solo una cita inventada degrada. Desde la correccion S2-04, 'degradado'
+    significa en este sistema que una capacidad fallo: un servicio caido, una
+    consulta que no se pudo completar, una fuente que el agente afirma haber
+    usado y nunca recibio.
+
+    Que la base de conocimiento no cubra una pregunta NO es una degradacion.
+    Es el sistema funcionando como debe: el agente recupero lo que habia,
+    comprobo que no alcanzaba, y lo declaro en vez de rellenarlo con
+    conocimiento general no verificado. Contar eso como fallo haria que la
+    conducta correcta se registrara igual que un error, y contaminaria la
+    medicion de S3-06 -- exactamente el problema que agent-evaluation.md
+    documento sobre las metricas que mezclan situaciones distintas.
+
+    La cobertura viaja en 'cubierto', dentro del detalle, para que pueda
+    medirse por separado: es una senal sobre la knowledge base, no sobre el
+    agente.
+    """
+    agente = _obtener_instancia("nutrition", NutritionAgent)
+    resultado = agente.responder(user_id, mensaje)
+
+    return {
+        "texto": resultado["respuesta"],
+        "herramientas_invocadas": [],
+        "degradado": bool(resultado["fuentesInventadas"]),
+        "detalle_agente": {
+            "fuentes": resultado["fuentes"],
+            "fuentes_inventadas": resultado["fuentesInventadas"],
+            "fragmentos_recuperados": resultado["fragmentosRecuperados"],
+            "cubierto": resultado["cubierto"],
+        },
+    }
+
+
 _AGENTES = [
     {
         "nombre": "wellness_coach",
@@ -87,19 +133,20 @@ _AGENTES = [
         ),
         "invocador": _invocar_wellness_coach,
     },
-]
-
-_DOMINIOS_SIN_AGENTE = [
     {
+        "nombre": "nutrition",
         "intencion": "nutricion",
-        "titulo": "Nutricion del corredor (sin agente asignado todavia)",
+        "titulo": "Nutrition Agent",
         "descripcion": (
             "Alimentacion e hidratacion del corredor: que comer antes, durante "
             "y despues de entrenar, reposicion de carbohidratos y electrolitos, "
             "hidratacion, y pautas nutricionales para resistencia."
         ),
+        "invocador": _invocar_nutrition,
     },
 ]
+
+_DOMINIOS_SIN_AGENTE: list[dict] = []
 
 # Intenciones que no corresponden a un dominio concreto de la plataforma.
 # El orquestador las resuelve por su cuenta, sin delegar.
