@@ -1,0 +1,182 @@
+{
+  "descripcion": "Conjunto de evaluacion del flujo multiagente (issue S3-06). Cada caso declara los agentes que deben intervenir; la lista vacia significa que el orquestador no debe delegar. La coincidencia se evalua por igualdad exacta, no por subconjunto: el marco del Sprint 2 usaba subconjunto y eso oculto una sobreinvocacion durante cinco corridas. Cada caso declara ademas 'comprobaciones': la parte de su criterio_aprobacion que una maquina puede verificar sobre la respuesta y la traza. Lo que no cabe ahi se resuelve con el veredicto manual documentado en multiagent_calidad_manual.json.",
+  "usuario_prueba": "usuario-eval-agente",
+  "casos": [
+    {
+      "id": "MA-01",
+      "tipo": "sin_delegacion",
+      "mensaje": "Hola, buenos dias",
+      "agentes_esperados": [],
+      "intencion_esperada": "no_reconocida",
+      "criterio_aprobacion": "Responde al saludo y pregunta en que puede ayudar. No redirige como si fuera un tema ajeno a la plataforma, y no invoca a ningun agente.",
+      "comprobaciones": {
+        "no_menciona": [
+          "me limito a temas"
+        ]
+      }
+    },
+    {
+      "id": "MA-02",
+      "tipo": "sin_delegacion",
+      "mensaje": "Que pelicula me recomiendas ver este fin de semana?",
+      "agentes_esperados": [],
+      "intencion_esperada": "fuera_de_dominio",
+      "criterio_aprobacion": "Redirige amablemente al dominio de la plataforma sin intentar responder la pregunta ni parcialmente.",
+      "comprobaciones": {
+        "menciona": [
+          "me limito a temas"
+        ]
+      }
+    },
+    {
+      "id": "MA-03",
+      "tipo": "entrenamiento",
+      "mensaje": "Como voy esta semana respecto a mi meta?",
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "intencion_esperada": "entrenamiento",
+      "criterio_aprobacion": "Consulta el progreso real del corredor y contrasta la carga actual con la meta. No pregunta al corredor un dato que la plataforma ya tiene.",
+      "comprobaciones": {
+        "herramientas_requeridas": [
+          "consultar_progreso_objetivo"
+        ]
+      }
+    },
+    {
+      "id": "MA-04",
+      "tipo": "entrenamiento",
+      "mensaje": "Puedo hacer un entrenamiento fuerte hoy dado el clima?",
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "intencion_esperada": "entrenamiento",
+      "criterio_aprobacion": "Consulta el clima de la ciudad del corredor y lo incorpora a la recomendacion. Si el servicio no responde, lo declara en vez de suponer un clima.",
+      "comprobaciones": {
+        "herramientas_requeridas": [
+          "consultar_clima"
+        ]
+      }
+    },
+    {
+      "id": "MA-05",
+      "tipo": "entrenamiento",
+      "mensaje": "Que significa cuando dicen zona 2 en running?",
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "intencion_esperada": "entrenamiento",
+      "criterio_aprobacion": "Responde fundamentado en la base de conocimiento y menciona que la informacion proviene de ella. No responde desde conocimiento general.",
+      "comprobaciones": {
+        "herramientas_requeridas": [
+          "consultar_base_conocimiento"
+        ],
+        "cita_fuentes": true
+      }
+    },
+    {
+      "id": "MA-06",
+      "tipo": "nutricion",
+      "mensaje": "Cuanta agua debo tomar mientras corro?",
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "intencion_esperada": "nutricion",
+      "criterio_aprobacion": "Responde con pautas de hidratacion fundamentadas en KB-006 y cita la fuente. No da recomendaciones de entrenamiento.",
+      "comprobaciones": {
+        "fuentes_esperadas": [
+          "KB-006"
+        ]
+      }
+    },
+    {
+      "id": "MA-07",
+      "tipo": "nutricion",
+      "mensaje": "Cuantos carbohidratos debo consumir durante una carrera larga?",
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "intencion_esperada": "nutricion",
+      "criterio_aprobacion": "Da la pauta de carbohidratos por hora fundamentada en KB-006. Si la pauta esta expresada por kilogramo, usa el peso del corredor.",
+      "comprobaciones": {
+        "fuentes_esperadas": [
+          "KB-006"
+        ]
+      }
+    },
+    {
+      "id": "MA-08",
+      "tipo": "colaboracion",
+      "mensaje": "Que como antes de una tirada larga y como ajusto el entrenamiento esta semana?",
+      "agentes_esperados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "intencion_esperada": "mixta",
+      "criterio_aprobacion": "Intervienen los dos agentes. Cada uno recibe solo su parte de la consulta, y la sub-consulta de entrenamiento conserva que hay una tirada larga prevista. Ningun bloque deriva al otro especialista, porque ambos estan respondiendo.",
+      "comprobaciones": {
+        "herramientas_requeridas": [
+          "consultar_base_conocimiento"
+        ],
+        "cita_fuentes": true
+      }
+    },
+    {
+      "id": "MA-09",
+      "tipo": "colaboracion",
+      "mensaje": "Me siento sin energia en los ultimos kilometros de mis tiradas largas, que hago?",
+      "agentes_esperados": [
+        "nutrition",
+        "wellness_coach"
+      ],
+      "intencion_esperada": "mixta",
+      "criterio_aprobacion": "Caso dificil: el mensaje no menciona comida, pero la falta de energia al final de una tirada larga depende del dominio nutricional tanto como del de entrenamiento. Verifica si el clasificador razona por dominio de conocimiento y no por palabras presentes en el texto.",
+      "comprobaciones": {
+        "fuentes_esperadas": [
+          "KB-006"
+        ]
+      }
+    },
+    {
+      "id": "MA-10",
+      "tipo": "frontera",
+      "mensaje": "Cuanto debo bajar el volumen las semanas antes de mi carrera?",
+      "agentes_esperados": [
+        "wellness_coach"
+      ],
+      "intencion_esperada": "entrenamiento",
+      "criterio_aprobacion": "Es una pregunta de tapering, no de nutricion, aunque una preparacion para competir tenga componente nutricional. Verifica que el clasificador no marque como mixta algo cuyo segundo dominio es apenas tangencial: una delegacion doble innecesaria duplica la latencia sin ser mas util.",
+      "comprobaciones": {
+        "herramientas_requeridas": [
+          "consultar_base_conocimiento"
+        ]
+      }
+    },
+    {
+      "id": "MA-11",
+      "tipo": "laguna_documental",
+      "mensaje": "Que debo desayunar antes de entrenar en la manana?",
+      "agentes_esperados": [
+        "nutrition"
+      ],
+      "intencion_esperada": "nutricion",
+      "criterio_aprobacion": "KB-006 no cubre la alimentacion previa al ejercicio. El agente debe declarar el vacio explicitamente y no citar ninguna fuente, en vez de rellenarlo con conocimiento general. Una respuesta que reconoce un vacio es correcta; una que lo rellena destruye la trazabilidad del sistema.",
+      "comprobaciones": {
+        "cita_fuentes": false
+      }
+    },
+    {
+      "id": "MA-12",
+      "tipo": "sin_delegacion",
+      "mensaje": "y eso",
+      "agentes_esperados": [],
+      "intencion_esperada": "no_reconocida",
+      "criterio_aprobacion": "Mensaje incompleto e incoherente. Pide aclaracion sin delegar y sin adivinar a que se referia.",
+      "comprobaciones": {
+        "no_menciona": [
+          "me limito a temas"
+        ]
+      }
+    }
+  ]
+}
