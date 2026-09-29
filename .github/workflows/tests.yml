@@ -22,6 +22,11 @@ on:
   pull_request:
   push:
     branches: [develop, main]
+  # Permite que otro workflow lo invoque como puerta en vez de repetir sus
+  # pasos. Lo usa deploy-frontend.yml: duplicar la instalacion de
+  # dependencias y la ejecucion de la suite habria creado dos definiciones
+  # de "las pruebas pasan" que se desincronizan a la primera de cambio.
+  workflow_call:
 
 jobs:
   test:

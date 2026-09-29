@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 
 from google.cloud.firestore import FieldFilter
 
+from src.utils.fechas import hoy, lunes_de_esta_semana
 from src.database.firestore_client import db
 
 
@@ -102,8 +103,11 @@ class RepositorioCorredor:
 
     def calcular_carga_semanal(self, user_id: str) -> tuple[float, float]:
         """Kilometraje de la semana actual y de la anterior."""
-        today = datetime.utcnow().date()
-        monday = today - timedelta(days=today.weekday())
+        # Zona del corredor, no UTC. En UTC-4 esto se desfasaba un dia a
+        # partir de las 20:00 locales, y el domingo reiniciaba la semana
+        # cuatro horas antes de tiempo. Ver src/utils/fechas.py.
+        today = hoy()
+        monday = lunes_de_esta_semana()
         last_monday = monday - timedelta(weeks=1)
         last_sunday = monday - timedelta(days=1)
 

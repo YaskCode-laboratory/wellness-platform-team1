@@ -34,15 +34,20 @@ peticion lo bloquea entero mientras espera. Ver la nota de src/app/main.py.
 import logging
 from dataclasses import asdict
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from src.api.seguridad import exigir_propiedad
 from src.agents.wellness_coach.memory import MAX_TURNOS_PERSISTIDOS, MemoriaConversacional
 from src.orchestration.orchestrator.agent import OrchestratorAgent
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/orchestrator", tags=["orchestrator"])
+router = APIRouter(
+    prefix="/orchestrator",
+    tags=["orchestrator"],
+    dependencies=[Depends(exigir_propiedad)],
+)
 
 orquestador = OrchestratorAgent()
 memoria = MemoriaConversacional()

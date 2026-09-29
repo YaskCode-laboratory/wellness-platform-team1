@@ -55,6 +55,7 @@ from datetime import date
 import vertexai
 from vertexai.generative_models import GenerationConfig, GenerativeModel
 
+from src.utils.fechas import hoy
 from src.orchestration.orchestrator.registro_agentes import (
     catalogo_para_prompt,
     intenciones_con_agente,
@@ -140,7 +141,7 @@ def _esquema_respuesta() -> dict:
 def _construir_prompt(mensaje: str) -> str:
     plantilla = load_prompt_template("clasificador_intencion", subcarpeta="orchestration")
     return plantilla.format(
-        fecha_actual=date.today().isoformat(),
+        fecha_actual=hoy().isoformat(),
         catalogo_agentes=catalogo_para_prompt(),
         mensaje=mensaje,
     )

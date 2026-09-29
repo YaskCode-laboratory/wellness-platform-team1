@@ -31,7 +31,10 @@ const CalculadoraModal = ({ onClose }) => {
   const [horas, setHoras] = useState('')
   const [minutos, setMinutos] = useState('')
   const [segundos, setSegundos] = useState('')
-  const [ritmoH, setRitmoH] = useState('')
+  // Solo lectura: la calculadora de ritmo lee las horas pero no las escribe,
+  // porque el campo de horas no existe en el formulario. Se conserva la
+  // variable para que el calculo de ritmoTotalSeg siga siendo legible.
+  const [ritmoH] = useState('')
   const [ritmoM, setRitmoM] = useState('')
   const [ritmoS, setRitmoS] = useState('')
   const [resultado, setResultado] = useState(null)
