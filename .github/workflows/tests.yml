@@ -2,17 +2,22 @@ name: Tests
 
 # Se dispara ante CUALQUIER Pull Request, sin filtrar por rama destino.
 #
-# La version anterior filtraba por 'branches: [main]', de modo que solo los
-# PR hacia main mostraban Checks. Funcionaba mientras cada sprint entraba en
-# un unico PR, y dejo de funcionar en el Sprint 3, cuando la metodologia paso
-# a un issue -> una rama -> un PR: los siete PR encadenados apuntan a su
-# predecesor, ninguno apunta a main, y los siete aparecian con "0 Checks".
+# El filtro paso por dos versiones antes de esta. Primero 'branches: [main]',
+# suficiente mientras cada sprint entraba en un unico PR hacia main. Luego
+# 'branches: [develop, main]', al abrir el Sprint 3.
 #
-# El trigger de push sobre develop no cubre ese caso: se dispara al integrar,
-# y su resultado queda asociado al commit de develop, no al Pull Request donde
-# se revisa. La evidencia tiene que estar donde ocurre la revision.
+# La segunda tampoco alcanza bajo la metodologia de un issue -> una rama ->
+# un PR. Los PR del sprint estan encadenados y cada uno apunta a su
+# predecesor, no a develop: solo el primero de la cadena cumple el filtro, y
+# los demas van cumpliendolo de uno en uno a medida que se integran los
+# anteriores. La evidencia de CI acaba dependiendo del orden de merge, cuando
+# es justamente lo que hay que poder ver ANTES de mergear.
 #
-# Si cada issue tiene su PR, cada PR ensena su suite.
+# El trigger de push sobre develop no cubre el hueco: se dispara al integrar y
+# su resultado queda asociado al commit de develop, no al Pull Request donde
+# ocurre la revision.
+#
+# Sin filtro, si cada issue tiene su PR, cada PR ensena su suite.
 on:
   pull_request:
   push:
@@ -41,11 +46,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # No se configura ningun secret de GCP a proposito. Toda la suite
-      # usa mocks y no toca Vertex AI, Firestore ni ChromaDB: es una
-      # consecuencia directa del cliente perezoso de Firestore (#10) y de
-      # que vertexai.init() no autentica al importar. Si este paso empieza
-      # a requerir credenciales, es senal de que una prueba dejo de estar
+      # No se configura ningun secret de GCP a proposito. Toda la suite usa
+      # mocks y no toca Vertex AI, Firestore ni ChromaDB: es una consecuencia
+      # directa del cliente perezoso de Firestore (#10) y de que
+      # vertexai.init() no autentica al importar. Si este paso empieza a
+      # requerir credenciales, es senal de que una prueba dejo de estar
       # aislada.
       - name: Ejecutar suite de pruebas
         run: python -m unittest discover -s tests -p "test_*.py" -v

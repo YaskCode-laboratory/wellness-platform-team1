@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import agent_routes, auth_routes
+from src.api.routes import agent_routes, auth_routes, orchestrator_routes
 
 app = FastAPI(
     title="Intelligent Wellness Platform",
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(agent_routes.router)
 app.include_router(auth_routes.router)
+app.include_router(orchestrator_routes.router)
 
 
 @app.get("/health")
