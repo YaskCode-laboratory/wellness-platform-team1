@@ -2,6 +2,7 @@ from datetime import datetime
 
 from firebase_admin import auth
 
+from src.utils.fechas import instante_iso
 from src.database.firestore_client import db
 
 
@@ -14,7 +15,7 @@ def register_user(email: str, password: str, nombre: str, peso: float, edad: int
         "peso": peso,
         "edad": edad,
         "nivel": nivel,
-        "createdAt": datetime.utcnow().isoformat(),
+        "createdAt": instante_iso(),
     }
     db.collection("users").document(user.uid).set(profile)
     return {"uid": user.uid, "email": user.email, "nombre": nombre, "message": "Usuario registrado exitosamente"}
@@ -31,6 +32,7 @@ def get_user(uid: str) -> dict:
         "peso": profile.get("peso"),
         "edad": profile.get("edad"),
         "nivel": profile.get("nivel"),
+        "ciudad": profile.get("ciudad"),
     }
 
 
@@ -39,6 +41,6 @@ def update_user(uid: str, updates: dict) -> dict:
         raise ValueError("No hay datos para actualizar")
     if "nombre" in updates:
         auth.update_user(uid, display_name=updates["nombre"])
-    updates["updatedAt"] = datetime.utcnow().isoformat()
+    updates["updatedAt"] = instante_iso()
     db.collection("users").document(uid).set(updates, merge=True)
     return {"uid": uid, "message": "Perfil actualizado exitosamente"}

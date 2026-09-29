@@ -51,9 +51,9 @@ acceder a su estado de entrenamiento mediante las herramientas).
 `WellnessAgent`, que devuelve un JSON estructurado con campos fijos (`tipo`,
 `mensaje`, `alerta`, etc.), el coach agent devuelve principalmente texto libre,
 dado que su naturaleza es dialogar, no emitir un veredicto estructurado en cada
-turno. PPuede acompañar su respuesta con metadata de trazabilidad (fuentes
+turno. Puede acompañar su respuesta con metadata de trazabilidad (fuentes
 citadas, herramientas invocadas) cuando corresponda — el diseño exacto de ese
-sobre de respuesta se resuelve al implementar el endpoint en el issue #12.
+sobre de respuesta quedó resuelto al implementar el endpoint en el issue #12.
 
 **Estado final implementado:** `WellnessCoachAgent.conversar()` devuelve un
 diccionario con `respuesta` (texto), `herramientasInvocadas` (lista de las

@@ -84,7 +84,10 @@ def consultar_clima(ciudad: str | None) -> dict:
             params={
                 "latitude": lat,
                 "longitude": lon,
-                "current": "temperature_2m,precipitation,weather_code,wind_speed_10m",
+                "current": (
+                    "temperature_2m,apparent_temperature,relative_humidity_2m,"
+                    "precipitation,weather_code,wind_speed_10m"
+                ),
             },
             timeout=TIMEOUT_SEGUNDOS,
         )
@@ -96,10 +99,18 @@ def consultar_clima(ciudad: str | None) -> dict:
             "mensaje": MENSAJE_SERVICIO_NO_DISPONIBLE,
         }
 
+    # La sensacion termica es lo que gobierna el estres por calor durante el
+    # ejercicio: combina temperatura, humedad, viento y radiacion. En un clima
+    # humedo como el de Maracaibo la diferencia con la temperatura seca es de
+    # varios grados, y es la que explica por que una salida se hace dura. Se
+    # devuelven ambas, con la sensacion primero, para que el agente razone
+    # sobre ella y pueda mencionar la temperatura cuando aporte contexto.
     return {
         "disponible": True,
         "ciudad": ciudad,
+        "sensacionTermicaC": actual.get("apparent_temperature"),
         "temperaturaC": actual.get("temperature_2m"),
+        "humedadPct": actual.get("relative_humidity_2m"),
         "precipitacionMm": actual.get("precipitation"),
         "vientoKmh": actual.get("wind_speed_10m"),
     }

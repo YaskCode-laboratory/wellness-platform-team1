@@ -44,10 +44,30 @@ _HERRAMIENTAS = [
     },
     {
         "name": "consultar_base_conocimiento",
+        # La descripcion decia "carga de entrenamiento, lesiones, NUTRICION,
+        # tapering...", heredado del Sprint 2, cuando el Coach era el unico
+        # agente y si cubria nutricion. S3-03 restringio su recuperacion a
+        # CATEGORIAS_COACH, que excluye 'nutricion', y esta descripcion se
+        # quedo sin actualizar.
+        #
+        # No es cosmetico: la descripcion de una FunctionDeclaration es lo que
+        # el modelo lee para decidir cuando invocar la herramienta. Le estaba
+        # diciendo que aqui encontraria nutricion, y el filtro garantiza que
+        # no. El modelo invocaba, no recibia nada, y quedaba ante un vacio
+        # aparente de la base de conocimiento en lugar de reconocer que el
+        # tema es de otro agente.
+        #
+        # Es la misma clase de defecto que la revision de S3-03 senalo sobre
+        # el prompt truncado: el filtro impide RECUPERAR nutricion, pero no
+        # impide que el modelo crea que deberia haberla. La garantia
+        # estructural y la descripcion cubren huecos distintos.
         "description": (
             "Recupera fragmentos verificables de la base de conocimiento sobre "
-            "carga de entrenamiento, lesiones, nutricion, tapering, recuperacion "
-            "y zonas de intensidad. Usar para cualquier pregunta de dominio."
+            "carga de entrenamiento y su progresion, zonas de intensidad, "
+            "distribucion de intensidad, prevencion de lesiones, tapering y "
+            "recuperacion. Usar para cualquier pregunta de dominio de "
+            "entrenamiento. NO cubre nutricion ni hidratacion: ese material "
+            "pertenece a otro agente de la plataforma."
         ),
         "parameters": {
             "type": "object",

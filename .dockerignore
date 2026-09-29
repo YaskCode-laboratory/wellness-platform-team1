@@ -1,0 +1,55 @@
+# Lo que NO entra en la imagen del backend.
+#
+# El Dockerfile copia explicitamente src/, prompts/ y el indice de ChromaDB, en
+# vez de hacer 'COPY . .'. Este archivo es la segunda barrera: reduce lo que
+# Docker envia como contexto de construccion, que es lo que hace lenta una
+# build aunque despues no se copie nada.
+#
+# Sin el, el contexto incluiria venv/ y frontend/node_modules, que juntos pesan
+# mas que todo lo demas del repositorio.
+
+# Entornos y dependencias
+venv/
+.venv/
+env/
+node_modules/
+**/node_modules/
+
+# El frontend se construye y despliega aparte, en Firebase Hosting
+frontend/
+
+# Historia y metadatos
+.git/
+.github/
+.gitignore
+
+# No se ejecutan dentro del contenedor
+tests/
+scripts/
+docs/
+assets/
+docker/
+
+# Datos que no son el indice: resultados de evaluacion, insumos sin procesar
+data/evaluation/
+data/processed/
+data/raw/
+
+# Cache y artefactos locales
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Configuracion local. El .env NUNCA debe viajar en una imagen: en Cloud Run
+# las variables las define el servicio y las credenciales las aporta la
+# identidad de la plataforma.
+.env
+.env.*
+!.env.example
+
+# Sistema
+.DS_Store
+**/.DS_Store

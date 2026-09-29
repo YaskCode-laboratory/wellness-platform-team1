@@ -27,7 +27,7 @@ const Login = () => {
         localStorage.removeItem('rememberedEmail')
       }
       navigate('/dashboard')
-    } catch (err) {
+    } catch {
       setError('Correo o contrasena incorrectos')
     } finally {
       setLoading(false)
@@ -39,7 +39,7 @@ const Login = () => {
     try {
       await loginWithGoogle()
       navigate('/dashboard')
-    } catch (err) {
+    } catch {
       setError('Error al iniciar sesion con Google')
     } finally {
       setLoading(false)

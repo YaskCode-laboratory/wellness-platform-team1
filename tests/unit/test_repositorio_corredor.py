@@ -11,6 +11,12 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 from src.data.repositorio_corredor import PerfilCorredor, RepositorioCorredor
+# Se usa hoy() y no fecha_de_hoy(). Son la misma fecha en el portatil del equipo
+# y distintas en el runner de CI, que corre en UTC: comparar contra fecha_de_hoy()
+# hacia que estas pruebas pasaran o fallaran segun la hora y la maquina. La
+# prueba tiene que compartir la definicion de "hoy" con el codigo que verifica.
+from src.utils.fechas import hoy as fecha_de_hoy
+
 
 
 def _doc(datos: dict, existe: bool = True) -> MagicMock:
@@ -71,12 +77,22 @@ class TestRepositorioCorredor(unittest.TestCase):
         self.assertEqual(perfil.nivel, "no declarado")
 
     def test_calcular_carga_semanal(self):
-        hoy = date.today()
+        hoy = fecha_de_hoy()
         lunes = hoy - timedelta(days=hoy.weekday())
 
+        # Las dos sesiones de la semana actual van en el lunes y en HOY, no en
+        # una fecha fija dentro de la semana. La version anterior usaba
+        # 'lunes + 2 dias', que los lunes y los martes cae en el futuro:
+        # calcular_carga_semanal() suma desde el lunes hasta hoy -- que es lo
+        # correcto, nadie ha corrido manana -- asi que esa sesion quedaba
+        # fuera y la prueba fallaba. Un dia de cada siete, y el primero en
+        # aparecer fue un lunes en CI.
+        #
+        # Si hoy ES lunes, ambas caen en el mismo dia y el total sigue siendo
+        # 13: la funcion suma por rango de fechas, no por dia distinto.
         sesiones_falsas = [
             _doc({"fecha": lunes.isoformat(), "distanciaKm": 5}),
-            _doc({"fecha": (lunes + timedelta(days=2)).isoformat(), "distanciaKm": 8}),
+            _doc({"fecha": hoy.isoformat(), "distanciaKm": 8}),
             _doc({"fecha": (lunes - timedelta(days=3)).isoformat(), "distanciaKm": 6}),
         ]
         self.mock_db.collection.return_value.where.return_value.stream.return_value = (

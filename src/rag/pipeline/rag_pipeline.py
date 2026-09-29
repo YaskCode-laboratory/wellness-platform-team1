@@ -4,6 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 
+from src.utils.fechas import hoy
 from src.rag.generation.generator import generar
 from src.rag.retriever.retriever import recuperar
 from src.utils.prompt_builder import (
@@ -13,11 +14,26 @@ from src.utils.prompt_builder import (
     meta_semanal,
 )
 
-TOP_K = 5
+# k=3 por la evaluación de recuperación del Sprint 1: recall, MRR y hit rate
+# idénticos a k=5, precisión superior. Ver la nota en
+# src/rag/retriever/retriever.py.
+TOP_K = 3
 PROMPT_PATH = Path(__file__).resolve().parents[3] / "prompts" / "rag" / "wellness_rag.txt"
 
 # Umbral de inactividad a partir del cual se considera retorno tras interrupción
 DIAS_INACTIVIDAD = 21
+
+# Ventana de sesiones cuyas notas se incorporan a la consulta de recuperación.
+# Solo las recientes: una molestia anotada hace dos meses no describe el estado
+# actual del corredor y desviaría la recuperación hacia conocimiento que ya no
+# aplica.
+DIAS_NOTAS_RELEVANTES = 14
+
+# Tope de caracteres de notas en la consulta. Las notas son texto libre y una
+# consulta dominada por prosa del corredor recupera peor que una que describe
+# su estado: el objetivo es que las notas maticen la búsqueda, no que la
+# sustituyan.
+MAX_CARACTERES_NOTAS = 220
 
 
 def construir_consulta(nivel: str, current_km: float, previous_km: float,
@@ -75,7 +91,58 @@ def construir_consulta(nivel: str, current_km: float, previous_km: float,
             "corredor sin experiencia previa, factores de riesgo de lesión en novatos"
         )
 
+    # Lo que el corredor escribió sobre cómo se sintió
+    notas = notas_recientes(sessions)
+    if notas:
+        partes.append(f"el corredor reporta: {notas}")
+
     return ", ".join(partes)
+
+
+def notas_recientes(sessions: list) -> str:
+    """Notas que el corredor escribió en sus sesiones recientes.
+
+    POR QUE ENTRAN EN LA CONSULTA DE RECUPERACION
+
+    Hasta el Sprint 3 la consulta se sintetizaba solo con datos numéricos:
+    nivel, volumen, variación, inactividad y meta. Las notas llegaban al
+    prompt de generación dentro del JSON de sesiones, pero no influían en qué
+    conocimiento se recuperaba.
+
+    El efecto se observó usando la aplicación. Un corredor anotó "sentí un
+    poco de mareo al final" y el modo RAG respondió hablando de "síntomas
+    subjetivos de esfuerzo" sin nombrarlo, mientras el modo legacy sí lo
+    mencionaba. No era timidez del modelo: la instrucción 1 del prompt RAG
+    exige fundamentar la respuesta exclusivamente en el conocimiento
+    recuperado, y no se había recuperado nada sobre síntomas porque la
+    consulta no los mencionaba. El generador hizo lo correcto con el contexto
+    equivocado.
+
+    La corrección va aquí y no en la instrucción: relajar la exigencia de
+    fundamentación rompería la garantía que sostiene el modo RAG entero.
+    Incorporando las notas, la recuperación puede traer las secciones de
+    señales de alerta y el generador puede hablar del síntoma con respaldo.
+
+    Solo las sesiones de los últimos DIAS_NOTAS_RELEVANTES días: una molestia
+    anotada hace dos meses no describe el estado actual y desviaría la
+    búsqueda hacia conocimiento que ya no aplica.
+    """
+    con_nota = [
+        s for s in sessions
+        if isinstance(s.get("diasAtras"), int)
+        and s["diasAtras"] <= DIAS_NOTAS_RELEVANTES
+        and (s.get("notas") or "").strip()
+    ]
+    if not con_nota:
+        return ""
+
+    # Se ordena aquí en vez de confiar en el orden de llegada: al recortar por
+    # longitud se conserva lo que el corredor escribió último, que es lo que
+    # mejor describe su estado actual.
+    con_nota.sort(key=lambda s: s["diasAtras"])
+
+    texto = "; ".join(s["notas"].strip() for s in con_nota)
+    return texto[:MAX_CARACTERES_NOTAS].rstrip()
 
 
 def construir_contexto(chunks: list[dict]) -> str:
@@ -133,7 +200,7 @@ def ejecutar_rag(
     # 2. Construcción del prompt con contexto
     plantilla = PROMPT_PATH.read_text(encoding="utf-8")
     prompt = plantilla.format(
-        fecha_actual=date.today().isoformat(),
+        fecha_actual=hoy().isoformat(),
         contexto=construir_contexto(chunks),
         nivel=nivel or "no declarado",
         current_km=current_km,

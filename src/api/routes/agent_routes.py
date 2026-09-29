@@ -1,14 +1,17 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.seguridad import exigir_propiedad
 from src.agents.wellness.agent import WellnessAgent
 from src.database.firestore_client import db
 
-router = APIRouter(prefix="/agent", tags=["agent"])
+router = APIRouter(
+    prefix="/agent", tags=["agent"], dependencies=[Depends(exigir_propiedad)]
+)
 wellness_agent = WellnessAgent()
 
 
 @router.post("/{userId}/analyze")
-async def analyze(
+def analyze(
     userId: str,
     mode: str = Query("rag", description="Modo de análisis: 'rag' o 'legacy'"),
 ):
@@ -22,7 +25,7 @@ async def analyze(
 
 
 @router.post("/{userId}/compare")
-async def compare(userId: str):
+def compare(userId: str):
     """Ejecuta ambos modos sobre el mismo estado y devuelve la comparativa.
 
     Endpoint de demostración: no persiste resultados.
@@ -34,7 +37,7 @@ async def compare(userId: str):
 
 
 @router.get("/{userId}/recommendation")
-async def get_recommendation(userId: str):
+def get_recommendation(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 
@@ -54,7 +57,7 @@ async def get_recommendation(userId: str):
 
 
 @router.get("/{userId}/recommendations")
-async def get_recommendations(userId: str):
+def get_recommendations(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 
@@ -72,7 +75,7 @@ async def get_recommendations(userId: str):
 
 
 @router.get("/{userId}/alerts")
-async def get_alerts(userId: str):
+def get_alerts(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 
