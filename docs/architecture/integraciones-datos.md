@@ -141,7 +141,7 @@ identificado por `traza_id`, con todos sus pasos. Un flujo con dos agentes es un
 documento con dos pasos, no dos documentos: la unidad de análisis es la
 solicitud, no la invocación.
 
-Detalle en `docs/architecture/protocolo-comunicacion-agentes.md`, sección 9.
+Detalle en `docs/orchestration/communication-flow.md`, sección 6.
 
 ---
 

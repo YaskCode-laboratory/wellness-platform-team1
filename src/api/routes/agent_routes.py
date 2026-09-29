@@ -8,7 +8,7 @@ wellness_agent = WellnessAgent()
 
 
 @router.post("/{userId}/analyze")
-async def analyze(
+def analyze(
     userId: str,
     mode: str = Query("rag", description="Modo de análisis: 'rag' o 'legacy'"),
 ):
@@ -22,7 +22,7 @@ async def analyze(
 
 
 @router.post("/{userId}/compare")
-async def compare(userId: str):
+def compare(userId: str):
     """Ejecuta ambos modos sobre el mismo estado y devuelve la comparativa.
 
     Endpoint de demostración: no persiste resultados.
@@ -34,7 +34,7 @@ async def compare(userId: str):
 
 
 @router.get("/{userId}/recommendation")
-async def get_recommendation(userId: str):
+def get_recommendation(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 
@@ -54,7 +54,7 @@ async def get_recommendation(userId: str):
 
 
 @router.get("/{userId}/recommendations")
-async def get_recommendations(userId: str):
+def get_recommendations(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 
@@ -72,7 +72,7 @@ async def get_recommendations(userId: str):
 
 
 @router.get("/{userId}/alerts")
-async def get_alerts(userId: str):
+def get_alerts(userId: str):
     try:
         from google.cloud.firestore import FieldFilter
 

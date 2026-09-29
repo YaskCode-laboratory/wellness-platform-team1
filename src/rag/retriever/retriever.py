@@ -3,7 +3,15 @@
 from src.rag.embeddings.embedder import embed_query
 from src.rag.vector_store.store import buscar
 
-TOP_K = 5
+# La evaluación de recuperación del Sprint 1 comparó k=3 contra k=5 sobre el
+# golden set y concluyó adoptar k=3: recall, MRR y hit rate resultaron
+# IDÉNTICOS, y la precisión superior. Ver docs/evaluation/retrieval-metrics.md
+# sección 5 y docs/rag/rag-evaluation.md sección 4.1.
+#
+# La conclusión se escribió en tres documentos y nunca llegó al código, que
+# siguió en 5 durante tres sprints. Se corrige en el Sprint 3, al observar
+# que el prompt del modo RAG cargaba dos fragmentos más de los necesarios.
+TOP_K = 3
 
 
 def recuperar(

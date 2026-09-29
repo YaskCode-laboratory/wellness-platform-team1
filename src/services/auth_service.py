@@ -31,6 +31,7 @@ def get_user(uid: str) -> dict:
         "peso": profile.get("peso"),
         "edad": profile.get("edad"),
         "nivel": profile.get("nivel"),
+        "ciudad": profile.get("ciudad"),
     }
 
 
