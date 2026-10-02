@@ -4,7 +4,8 @@ import json
 from datetime import date, datetime
 from pathlib import Path
 
-from src.utils.fechas import dias_desde, hoy
+from src.utils import fechas
+from src.utils.fechas import hoy
 
 
 # ── Carga de plantillas ──────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ def dias_desde(fecha_str) -> int | None:
         fecha = datetime.fromisoformat(str(fecha_str)[:10]).date()
     except ValueError:
         return None
-    return dias_desde(fecha)
+    return fechas.dias_desde(fecha)
 
 
 def enriquecer_sesiones(sessions: list) -> list:
